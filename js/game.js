@@ -1959,6 +1959,54 @@ startEvents();
   if(s) s.addEventListener('input', function(){ setSfxVolume(s.value/100); });
 })();
 
+/* ---------- Dev panel (only with ?dev=1 in URL) ---------- */
+(function(){
+  if(!location.search.includes('dev=1')) return;
+  const panel = document.createElement('div');
+  panel.id = 'dev-panel';
+  panel.style.cssText = 'position:fixed;right:16px;top:80px;z-index:2000;width:210px;padding:12px;border-radius:14px;'+
+    'background:rgba(8,12,28,.96);border:1px dashed #ff4d6d;font-size:12px;color:#dbeafe;display:flex;flex-direction:column;gap:6px';
+  panel.innerHTML = `
+    <div style="font-family:Orbitron;color:#ff4d6d;text-align:center">DEV PANEL</div>
+    <button data-d="money"  class="glass rounded py-1">+1 000 ₽</button>
+    <button data-d="exp"    class="glass rounded py-1">+500 EXP</button>
+    <button data-d="stage"  class="glass rounded py-1">След. форма</button>
+    <button data-d="pp"     class="glass rounded py-1">+5 пассивок</button>
+    <button data-d="meta"   class="glass rounded py-1">+3 мета-очка</button>
+    <button data-d="item"   class="glass rounded py-1">+случайный предмет</button>
+    <button data-d="day"    class="glass rounded py-1">День вперёд (стрик)</button>
+    <button data-d="week"   class="glass rounded py-1">Сбросить неделю</button>
+    <button data-d="stats"  class="glass rounded py-1">+1 СИЛ/ВЫН/ХАР</button>`;
+  document.body.appendChild(panel);
+  panel.addEventListener('click', function(e){
+    const b = e.target.closest('[data-d]');
+    if(!b) return;
+    const act = b.dataset.d;
+    if(act==='money') state.money += 1000;
+    if(act==='exp') state.exp += 500;
+    if(act==='stage'){ const n = nextStageThreshold(); if(n) state.exp = n; else state.exp += 5000; }
+    if(act==='pp') state.passPoints += 5;
+    if(act==='meta'){ state.meta.points += 3; }
+    if(act==='item') state.inventory.push(rollItem(['simple','elite','legendary'][Math.floor(Math.random()*3)]));
+    if(act==='day'){
+      state.streak.count = (state.streak.count||0)+1;
+      state.streak.lastDate = todayStr();
+      state.daily = { date:'', train:0, earn:0, loot:0, mut:0, claimed:false, slept:false, trainById:{} };
+    }
+    if(act==='week'){ state.weekly = { key:weekKey(), train:0, earn:0, loot:0, claimed:{} }; toast('Неделя сброшена'); }
+    if(act==='stats'){ state.attr.str++; state.attr.sta++; state.attr.cha++; }
+    renderAll();
+    /* refresh any open modal that renders its own data */
+    const shown = id => document.getElementById(id) && document.getElementById(id).classList.contains('show');
+    if(shown('modal-cabinet')) renderCabinet();
+    if(shown('modal-weekly')) renderWeekly();
+    if(shown('modal-prestige')){ renderPrestigeInfo(); renderMetaShop(); }
+    if(shown('modal-stats')){ document.getElementById('stat-spark-exp').innerHTML = sparkline(state.history.exp, '#00f3ff'); document.getElementById('stat-spark-w').innerHTML = sparkline(state.history.weight, '#bc13fe'); }
+    saveGame();
+    toast('DEV: '+b.textContent.trim(),'good');
+  });
+})();
+
 /* Twitch OAuth return: capture token from URL hash */
 (function(){
   try{
