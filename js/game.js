@@ -643,6 +643,7 @@ function renderInventory(){
         <div class="text-xl">${itemImg(it)}</div>
         <div class="mt-1 leading-tight">${it.name}</div>
         <div class="text-[9px] text-cyan-300/60">${equippedHere?'надето':SLOT_META[it.slot].name}</div>
+        <button class="glass rounded px-2 py-0.5 text-[10px] mt-1 hover:bg-pink-400/10" data-call="sellItem" data-args="${idx}" title="Продать"><i class="fa-solid fa-coins text-yellow-300"></i> ${SELL_PRICE[it.rarity]||0}</button>
       </div>`;
     }).join('');
   }
@@ -666,6 +667,18 @@ function unequip(slot){
   state.inventory.push(it);
   state.equipped[slot] = null;
   toast('Снято: '+it.name);
+  renderAll();
+  saveGame();
+}
+function sellItem(idx){
+  const it = state.inventory[idx];
+  if(!it) return;
+  if(Object.values(state.equipped).includes(it)){ toast('Сначала сними предмет','bad'); return; }
+  const price = SELL_PRICE[it.rarity]||0;
+  state.inventory.splice(idx,1);
+  state.money += price;
+  toast('Продано: '+it.name+' (+'+price+' ₽)','good');
+  sfx('buy');
   renderAll();
   saveGame();
 }
@@ -812,7 +825,7 @@ function deepMerge(base, patch){
 }
 function saveGame(){
   try{
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ v:1, state:state }));
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ v:1, ts:Date.now(), state:state }));
     flashSave();
   }catch(e){ /* storage unavailable (private mode, etc.) */ }
 }
@@ -826,8 +839,21 @@ function loadGame(){
        them, so fields added in newer versions always exist */
     state = deepMerge(makeDefaultState(), data.state);
     weeklyInit();
+    grantOfflineIncome(data.ts);
     return true;
   }catch(e){ return false; }
+}
+/* subscribers keep watching while you are away (capped at 8 hours) */
+function grantOfflineIncome(ts){
+  try{
+    if(!ts || !state.tutorialDone) return;
+    const mins = (Date.now()-ts)/60000;
+    if(mins < 60) return;
+    const hours = Math.min(8, Math.floor(mins/60));
+    const gain = Math.round(state.channel*3*incomeMult())*hours;
+    state.money += gain;
+    setTimeout(function(){ toast('😴 Пока тебя не было ('+hours+' ч): подписчики принесли +'+gain+' ₽','good'); sfx('loot'); }, 800);
+  }catch(e){}
 }
 function wipeProgress(){
   if(!confirm('Стереть ВЕСЬ прогресс и начать заново? Это действие необратимо.')) return;
@@ -935,7 +961,8 @@ function renderCabinet(){
       ['Очки пассивок', state.passPoints],
       ['Мета-уровень', (state.meta?state.meta.level:0)+' (+'+((state.meta?state.meta.points:0)*2)+'% к EXP/₽)'],
       ['Клан', state.clan ? ('«'+state.clan+'» (+5% доход)') : 'нет'],
-      ['Куплено мутаций', Object.values(state.mutations).reduce((a,b)=>a+b,0)]
+      ['Куплено мутаций', Object.values(state.mutations).reduce((a,b)=>a+b,0)],
+      ['Питомец', petStage().name+' · ур.'+(state.pet?state.pet.level:1)+' (+'+Math.round((petIncomeMult()-1)*100)+'% доход)']
     ];
      st.innerHTML = rows.map(r=>`<div class="cab-stat"><span>${r[0]}</span><span>${esc(r[1])}</span></div>`).join('');
   }
@@ -1149,8 +1176,14 @@ function metaUp(id){
   return (state.meta && state.meta.up && state.meta.up[id]) || 0;
 }
 function clanMult(){ return state.clan ? 1.05 : 1; }
-function petIncomeMult(){ return 1 + (state.pet?state.pet.level:1)*0.03; }
-function petRecMult(){ return 1 + (state.pet?(state.pet.level-1):0)*0.03; }
+function petStage(){
+  let s = PET_STAGES[0];
+  const l = state.pet ? state.pet.level : 1;
+  for(const st of PET_STAGES){ if(l >= st.min) s = st; }
+  return s;
+}
+function petIncomeMult(){ return 1 + (state.pet?state.pet.level:1)*0.03*petStage().mult; }
+function petRecMult(){ return 1 + (state.pet?(state.pet.level-1):0)*0.03*petStage().mult; }
 function streakMult(){ return 1 + Math.min(state.streak.count||0, 7)*(0.05 + 0.01*metaUp('m_streak')); }
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 
@@ -1195,12 +1228,18 @@ function bumpStreak(){
 function petExpGain(n){
   if(!state.pet) return;
   state.pet.exp += n;
-  const need = state.pet.level*100;
+  let need = state.pet.level*100;
   while(state.pet.exp >= need){
     state.pet.exp -= need;
     state.pet.level++;
+    need = state.pet.level*100;
     toast('🐣 Фан-питомец вырос до ур.'+state.pet.level+'!','good');
     sfx('level');
+    const st = petStage();
+    if(st.min === state.pet.level && st.min > 1){
+      toast('✨ Эволюция! Питомец теперь — '+st.name+' (бонус x'+st.mult+')','good');
+      sfx('level'); burstCenter('var(--purple)');
+    }
   }
 }
 
@@ -1981,7 +2020,8 @@ startEvents();
     <button data-d="item"   class="glass rounded py-1">+случайный предмет</button>
     <button data-d="day"    class="glass rounded py-1">День вперёд (стрик)</button>
     <button data-d="week"   class="glass rounded py-1">Сбросить неделю</button>
-    <button data-d="stats"  class="glass rounded py-1">+1 СИЛ/ВЫН/ХАР</button>`;
+    <button data-d="stats"  class="glass rounded py-1">+1 СИЛ/ВЫН/ХАР</button>
+    <button data-d="channel" class="glass rounded py-1">+100 канал</button>`;
   document.body.appendChild(panel);
   panel.addEventListener('click', function(e){
     const b = e.target.closest('[data-d]');
@@ -2000,6 +2040,7 @@ startEvents();
     }
     if(act==='week'){ state.weekly = { key:weekKey(), train:0, earn:0, loot:0, claimed:{} }; toast('Неделя сброшена'); }
     if(act==='stats'){ state.attr.str++; state.attr.sta++; state.attr.cha++; }
+    if(act==='channel'){ state.channel = Math.min(999, state.channel+100); }
     renderAll();
     /* refresh any open modal that renders its own data */
     const shown = id => document.getElementById(id) && document.getElementById(id).classList.contains('show');
