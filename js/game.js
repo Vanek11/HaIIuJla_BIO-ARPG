@@ -16,7 +16,7 @@ function makeDefaultState(){
     pet:{ level:1, exp:0 },
     history:{ exp:[0], weight:[61] },
     achievements:{},
-    age:18, hunger:100, sleepDebt:0,
+    age:18, hunger:100, sleepDebt:0, sinceSleep:0,
     attr:{ str:0, sta:0, cha:0 },
     channel:1, studio:0,
     sponsor:{ active:false, days:0, bonus:0 },
@@ -243,9 +243,12 @@ function doRest(r){
   if(r.id==='r1'){
     state.daily.slept = true;
     state.sleepDebt = clamp(state.sleepDebt - 50);
-    const rent = 100 + level()*12;
+    state.sinceSleep = 0;
+    const rent = 100 + level()*12 + STAGES.indexOf(currentStage())*50;
     if(state.money >= rent){ state.money -= rent; toast('Аренда и питание оплачены: -'+rent+' ₽','good'); }
     else { const debt = rent - state.money; state.money = 0; state.mood = clamp(state.mood - 20); state.hp = clamp(state.hp - 10); toast('Не хватило на аренду! Долг '+debt+' ₽ — настроение и HP просели.','bad'); sfx('error'); }
+    const subs = Math.round(state.channel*3*incomeMult());
+    if(subs>0){ state.money += subs; toast('Доход с подписчиков: +'+subs+' ₽','good'); }
   }
   state.stats.rest++;
   toast('Восстановление: +HP/Энергия/Настроение','good');
@@ -256,6 +259,7 @@ function doRest(r){
 /* ---------------- Post-action checks ---------------- */
 function afterAction(){
   const newLvl = level();
+  state.sinceSleep = (state.sinceSleep||0)+1;
   // grant passive points on level up (start with 1, +1 per level above 1)
   const expectedPP = 1 + (newLvl - 1);
   if(expectedPP > state.passPoints){
@@ -1366,7 +1370,7 @@ function grantGlyph(){
 function rollGlyphChance(){ if(Math.random()<0.25) grantGlyph(); }
 
 function checkEndings(){
-  const trig = { titan: currentStage().min>=34500, tycoon: state.money>=1000000, legend: level()>=100 };
+  const trig = { titan: currentStage().min>=34500, tycoon: state.money>=1000000, legend: state.channel>=999 };
   for(const k in trig){ if(trig[k] && !state.endings[k]){ state.endings[k]=true; showEnding(k); recordRun(); } }
 }
 function showEnding(k){
@@ -1515,9 +1519,10 @@ function openDuels(){
   const wrap = document.getElementById('duel-list');
   if(wrap) wrap.innerHTML = DUEL_BOTS.map(function(b){
     const can = myPower() >= b.power*0.5;
+    const rw = Math.round(b.reward*(1+level()/40));
     return `<div class="glass rounded-xl p-3 flex items-center gap-3 ${can?'':'opacity-60'}">
       <div class="text-2xl" style="color:${b.color||'#c4b5fd'}"><i class="fa-solid ${b.icon||'fa-robot'}"></i></div>
-      <div class="flex-1"><div class="text-sm font-semibold">${b.name}</div><div class="text-[11px] text-cyan-200/70">Сила: ${b.power} · Награда: ${b.reward} ₽ + EXP</div></div>
+      <div class="flex-1"><div class="text-sm font-semibold">${b.name}</div><div class="text-[11px] text-cyan-200/70">Сила: ${b.power} · Награда: ${rw} ₽ + EXP</div></div>
       <button class="glass rounded-lg px-3 py-2 text-sm neon-purple hover:bg-pink-400/10" data-call="startDuel" data-args="${b.id}">Бой</button>
     </div>`;
   }).join('');
@@ -1528,7 +1533,7 @@ function startDuel(id){
   const b = DUEL_BOTS.find(function(x){ return x.id===id; }); if(!b) return;
   const my = myPower();
   const win = my >= b.power*0.8 && Math.random() < (my/(my+b.power));
-  if(win){ const g=Math.round(b.reward*expMult()); state.exp+=g; state.money+=b.reward; toast('Победа над '+b.name+'! +'+b.reward+' ₽, +'+g+' EXP','good'); sfx('duel_win'); }
+  if(win){ const rw=Math.round(b.reward*(1+level()/40)); const g=Math.round(b.reward*expMult()); state.exp+=g; state.money+=rw; toast('Победа над '+b.name+'! +'+rw+' ₽, +'+g+' EXP','good'); sfx('duel_win'); }
   else { state.hp=clamp(state.hp-8); state.mood=clamp(state.mood-8); toast('Поражение от '+b.name,'bad'); sfx('duel_lose'); }
   afterAction();
 }
