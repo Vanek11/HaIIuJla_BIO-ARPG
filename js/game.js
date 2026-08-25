@@ -991,7 +991,8 @@ function setSfxVolume(v){
 function sfx(type){
   if(!soundOn) return;
   const ctx = ensureAudio(); if(!ctx) return;
-  const map = { click:[440,0.05], buy:[680,0.09], level:[880,0.20], loot:[520,0.12,'up'], error:[150,0.18] };
+  const map = { click:[440,0.05], buy:[680,0.09], level:[880,0.20], loot:[520,0.12,'up'], error:[150,0.18],
+                event:[590,0.16,'up'], duel_win:[660,0.22,'up'], duel_lose:[180,0.22], ach:[740,0.18,'up'], weekly:[830,0.20,'up'] };
   const cfg = map[type]||map.click;
   const o = ctx.createOscillator(), g = ctx.createGain();
   o.type = (type==='error')?'sawtooth':'triangle';
@@ -1060,7 +1061,7 @@ function checkAchievements(){
       state.achievements[a.id] = true;
       state.passPoints += 1;
       toast('🏆 Ачивка: '+a.name+' (+1 пассивка)','good');
-      sfx('level');
+      sfx('ach');
       burstAtEl(document.getElementById('callsign-tag'), 'var(--purple)');
       if(a.id==='form110') recordRun();
     }
@@ -1086,7 +1087,7 @@ function triggerEvent(){
   document.getElementById('ev-choices').innerHTML = ev.choices.map(function(c,i){ return '<button class="ev-choice" data-call="resolveEvent" data-args="'+i+'">'+c.label+'</button>'; }).join('');
   window._curEvent = ev;
   openModal('modal-event');
-  sfx('click');
+  sfx('event');
 }
 function resolveEvent(i){
   const ev = window._curEvent; if(!ev) return;
@@ -1515,8 +1516,8 @@ function startDuel(id){
   const b = DUEL_BOTS.find(function(x){ return x.id===id; }); if(!b) return;
   const my = myPower();
   const win = my >= b.power*0.8 && Math.random() < (my/(my+b.power));
-  if(win){ const g=Math.round(b.reward*expMult()); state.exp+=g; state.money+=b.reward; toast('Победа над '+b.name+'! +'+b.reward+' ₽, +'+g+' EXP','good'); sfx('level'); }
-  else { state.hp=clamp(state.hp-8); state.mood=clamp(state.mood-8); toast('Поражение от '+b.name,'bad'); sfx('error'); }
+  if(win){ const g=Math.round(b.reward*expMult()); state.exp+=g; state.money+=b.reward; toast('Победа над '+b.name+'! +'+b.reward+' ₽, +'+g+' EXP','good'); sfx('duel_win'); }
+  else { state.hp=clamp(state.hp-8); state.mood=clamp(state.mood-8); toast('Поражение от '+b.name,'bad'); sfx('duel_lose'); }
   afterAction();
 }
 
@@ -1838,7 +1839,7 @@ function claimWeekly(id){
   if(q.reward.money) state.money += q.reward.money;
   if(q.reward.exp) state.exp += q.reward.exp;
   toast('Награда: '+(q.reward.money?q.reward.money+' ₽ ':'')+(q.reward.exp?'+'+q.reward.exp+' EXP':''),'good');
-  sfx('level');
+  sfx('weekly');
   renderWeekly();
   renderAll();
   saveGame();
