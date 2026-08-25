@@ -170,7 +170,7 @@ const ACHIEVEMENTS = [
   { id:'mut30',  name:'Генетический сбой', desc:'Купить 30 мутаций', icon:'fa-bolt', check:()=>Object.values(state.mutations).reduce((a,b)=>a+b,0)>=30 },
   { id:'rich',   name:'Магнат', desc:'Накопить 10 000 ₽', icon:'fa-sack-dollar', check:()=>state.money>=10000 },
   { id:'loot50', name:'Коллекционер', desc:'Открыть 50 лутбоксов', icon:'fa-box-open', check:()=>state.stats.loot>=50 },
-  { id:'nosleep7', name:'Без сна', desc:'Сделать 7 действий подряд без сна', icon:'fa-moon', check:()=>state.stats.train+state.stats.work+state.stats.rest>=7 && !state.daily.slept },
+  { id:'nosleep7', name:'Без сна', desc:'Сделать 7 действий подряд без сна', icon:'fa-moon', check:()=>(state.sinceSleep||0)>=7 },
   { id:'ironwill', name:'Железная воля', desc:'Провести 100 тренировок', icon:'fa-dumbbell', check:()=>state.stats.train>=100 },
   { id:'broadcaster', name:'Бродкастер', desc:'Поднять канал до 50', icon:'fa-satellite-dish', check:()=>state.channel>=50 }
 ];
@@ -259,7 +259,7 @@ const GLYPHS = [
 const ENDINGS = {
   titan:{ title:'ТИТАН', icon:'fa-dumbbell', text:'Ты достиг 110 кг — абсолютной формы. Легенда стриминга воплощена!' },
   tycoon:{ title:'МАГНАТ', icon:'fa-sack-dollar', text:'Капитал пробил 1 000 000 ₽. Ты построил империю.' },
-  legend:{ title:'ЛЕГЕНДА', icon:'fa-crown', text:'Уровень 100 достигнут. Ты вне категорий.' }
+  legend:{ title:'ЛЕГЕНДА', icon:'fa-crown', text:'Канал пробил 999 подписчиков. Ты уже не стример — ты легенда эфира.' }
 };
 
 /* weekly quests: reset every ISO week, progress from weekly counters */
@@ -285,12 +285,14 @@ const META_UPGRADES = [
 ];
 
 const DUEL_BOTS = [
-  { id:'b1', name:'ShadowLift',  power:20,  reward:300, icon:'fa-ghost',    color:'#a855f7' },
-  { id:'b2', name:'IronBot',     power:45,  reward:700, icon:'fa-robot',    color:'#8aa2b8' },
-  { id:'b3', name:'NeonTitan',   power:80,  reward:1500, icon:'fa-mountain', color:'#00f3ff' },
-  { id:'b4', name:'VoidReaper',  power:130, reward:3000, icon:'fa-skull',    color:'#fb7185' },
-  { id:'b5', name:'PixelWraith', power:95,  reward:2200, icon:'fa-user-ninja', color:'#3ddc84' },
-  { id:'b6', name:'GigaLifter',  power:200, reward:5000, icon:'fa-dragon',   color:'#f59e0b' }
+  { id:'b1', name:'ShadowLift',   power:20,  reward:300,  icon:'fa-ghost',    color:'#a855f7' },
+  { id:'b2', name:'IronBot',      power:45,  reward:700,  icon:'fa-robot',    color:'#8aa2b8' },
+  { id:'b3', name:'NeonTitan',    power:80,  reward:1500, icon:'fa-mountain', color:'#00f3ff' },
+  { id:'b5', name:'PixelWraith',  power:95,  reward:2200, icon:'fa-user-ninja', color:'#3ddc84' },
+  { id:'b4', name:'VoidReaper',   power:130, reward:3000, icon:'fa-skull',    color:'#fb7185' },
+  { id:'b6', name:'GigaLifter',   power:200, reward:5000, icon:'fa-dragon',   color:'#f59e0b' },
+  { id:'b7', name:'Overmind9000', power:320, reward:9000, icon:'fa-brain',    color:'#22d3ee' },
+  { id:'b8', name:'NeonGod',      power:480, reward:15000, icon:'fa-crown',   color:'#f59e0b' }
 ];
 
 const STORY = [
