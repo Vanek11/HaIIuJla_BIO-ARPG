@@ -316,6 +316,10 @@ function renderStatus(){
   const lvl = level();
   document.getElementById('stage-name').textContent = s.label;
   document.getElementById('lvl-val').textContent = lvl;
+  const sv = document.getElementById('streak-val');
+  if(sv){
+    sv.textContent = (state.streak.count||0)+' дн. · ×'+streakMult().toFixed(2);
+  }
   document.getElementById('hero-form').textContent = s.label;
   const goal = nextStageThreshold();
   setNum('exp-cur', Math.floor(state.exp));
