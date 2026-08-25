@@ -95,6 +95,17 @@ const BRANCHES = [
 
 const MUT_TIERS = [ {cost:1}, {cost:2}, {cost:3}, {cost:4}, {cost:5} ];
 
+/* fan-pet evolution stages: reached by pet level, mult boosts per-level bonuses */
+const PET_STAGES = [
+  { min:1,  name:'Яйцо',   icon:'fa-egg',    mult:1   },
+  { min:5,  name:'Птенец', icon:'fa-crow',   mult:1.3 },
+  { min:10, name:'Котик',  icon:'fa-cat',    mult:1.6 },
+  { min:20, name:'Дракон', icon:'fa-dragon', mult:2   }
+];
+
+/* money gained when selling an item from the bag */
+const SELL_PRICE = { common:50, rare:150, epic:400, legendary:1000 };
+
 const ITEM_POOL = {
   simple: [
     { id:'wraps', img:'images/items/wraps.svg', name:'Тряпичные хваты', slot:'gloves', rarity:'common', icon:'fa-mitten', exp:4, w:40 },
@@ -221,7 +232,7 @@ const EVENTS = [
 const TUT_STEPS = [
   { title:'Привет, стример!', body:'Это твой личный кабинет трансформации. Ты начинаешь с 61 кг, 1 уровня и 500 ₽. Цель — раскачать тело и стать Титаном (110 кг).' },
   { title:'Действия', body:'Тренировки дают EXP, но жгут Бодрость и Настроение (чем тяжелее — тем больше). Просто «спамить» тренировки не выйдет: настроение упадёт до нуля — и конец.' },
-  { title:'Баланс ресурсов', body:'Сон можно взять только РАЗ в день и он лишь частично восстанавливает. За сон платится АРЕНДА (растёт с уровнем) — без работы ты не сможешь отдыхать и просядешь по настроению/HP. Чередуй тренировки, работу и отдых!' },
+  { title:'Баланс ресурсов', body:'Сон можно взять только РАЗ в день, и он приносит доход с подписчиков — качай канал! За сон платится АРЕНДА: она растёт с уровнем и формой тела. Чередуй тренировки, работу и отдых!' },
   { title:'Готов?', body:'Меняй тему и звук в боковой панели, следи за ачивками. Удачи на стриме!' }
 ];
 
