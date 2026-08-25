@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bio-ARPG: Симулятор Трансформации Стримера</title>
+<link rel="stylesheet" href="css/tailwind.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/game.css" />
+</head>
+<body class="scrollbar">
+
+<!-- Shared interactive background + custom cursor -->
+<div id="custom-cursor"></div>
+<canvas id="canvas-container"></canvas>
+<div class="bg-gradient"></div>
+<div class="scanlines"></div>
+
+<!-- ================= START SCREEN / ЛИЧНЫЙ КАБИНЕТ ================= -->
+<div id="screen-start" class="start-screen hidden">
+  <div class="start-card glass rounded-2xl p-6 md:p-8 scrollbar">
+    <div class="text-center">
+      <div class="start-logo font-display neon-text">BIO&#8209;ARPG</div>
+      <p class="text-sm text-cyan-300/70 mb-1">Личный кабинет стримера</p>
+      <p class="text-[12px] text-cyan-200/60 mb-5">Создай свой путь трансформации. Заполни профиль, чтобы начать.</p>
+    </div>
+
+    <label class="text-[12px] text-cyan-300/80">Позывной (никнейм)</label>
+    <input id="start-name" maxlength="18" class="callsign-input mt-1 mb-4" placeholder="например, IronStreamer" />
+
+    <label class="text-[12px] text-cyan-300/80">Аватар</label>
+    <div id="avatar-grid" class="avatar-grid mt-2 mb-4"></div>
+
+    <label class="text-[12px] text-cyan-300/80">Цвет неонового кода</label>
+    <div id="color-row" class="color-row mt-2 mb-4"></div>
+
+    <label class="text-[12px] text-cyan-300/80">Класс / амплуа</label>
+    <div id="class-grid" class="class-grid mt-2 mb-4"></div>
+
+    <label class="text-[12px] text-cyan-300/80">Карьерная ниша (бонусы к игре)</label>
+    <div id="niche-grid" class="class-grid mt-2 mb-6"></div>
+
+    <label class="text-[12px] text-cyan-300/80">Сложность</label>
+    <select id="start-difficulty" class="w-full glass rounded-lg p-2 text-sm neon-text bg-transparent mb-5">
+      <option value="easy">Лёгкая — больше EXP, мягче спад</option>
+      <option value="normal" selected>Обычная</option>
+      <option value="hard">Тяжёлая — меньше EXP, быстрее усталость</option>
+    </select>
+
+    <button class="w-full glass rounded-xl py-3 font-display text-lg neon-text hover:bg-cyan-400/10" data-call="submitProfile"><i class="fa-solid fa-rocket"></i> Начать трансформацию</button>
+  </div>
+</div>
+
+<!-- ================= HEADER / STATUS ================= -->
+<header class="sticky top-0 z-40 glass border-b border-cyan-400/30">
+  <div class="max-w-7xl mx-auto px-3 py-3">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <div class="flex items-center gap-3 flex-wrap">
+          <h1 class="font-display text-xl md:text-2xl neon-text tracking-wider">BIO&#8209;ARPG</h1>
+          <button class="text-[11px] glass rounded px-2 py-1 hover:bg-cyan-400/10" data-call="openCabinet"><i class="fa-solid fa-id-card"></i> Кабинет</button>
+          <button class="text-[11px] glass rounded px-2 py-1 hover:bg-cyan-400/10" data-call="wipeProgress"><i class="fa-solid fa-trash"></i> Сброс</button>
+        </div>
+        <p class="text-[11px] text-cyan-300/70 -mt-1">Симулятор Трансформации Стримера</p>
+        <div class="text-[11px] text-cyan-300/80"><i class="fa-solid fa-user"></i> <span id="callsign-tag">@стример</span></div>
+        <span id="save-dot" class="text-[10px] text-green-400 opacity-0 transition duration-500">● сохранено автоматически</span>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-4 flex-1 max-w-3xl">
+        <div class="glass rounded-lg px-3 py-1.5">
+          <div class="flex justify-between text-[11px] mb-1"><span class="text-red-300"><i class="fa-solid fa-heart"></i> Здоровье</span><span id="hp-val">100</span></div>
+          <div class="bar-track"><div id="hp-bar" class="bar-fill" style="width:100%;background:linear-gradient(90deg,#ff4d6d,#ff8fa3)"></div></div>
+        </div>
+        <div class="glass rounded-lg px-3 py-1.5">
+          <div class="flex justify-between text-[11px] mb-1"><span class="text-yellow-300"><i class="fa-solid fa-bolt"></i> Бодрость</span><span id="en-val">100</span></div>
+          <div class="bar-track"><div id="en-bar" class="bar-fill" style="width:100%;background:linear-gradient(90deg,#fbbf24,#fde68a)"></div></div>
+        </div>
+        <div class="glass rounded-lg px-3 py-1.5">
+          <div class="flex justify-between text-[11px] mb-1"><span class="text-pink-300"><i class="fa-solid fa-face-smile"></i> Настроение</span><span id="mo-val">100</span></div>
+          <div class="bar-track"><div id="mo-bar" class="bar-fill" style="width:100%;background:linear-gradient(90deg,#bc13fe,#f0abfc)"></div></div>
+        </div>
+        <div class="glass rounded-lg px-3 py-1.5">
+          <div class="flex justify-between text-[11px] mb-1"><span class="text-green-300"><i class="fa-solid fa-ruble-sign"></i> Финансы</span><span id="mn-val">500 ₽</span></div>
+          <div class="bar-track"><div id="mn-bar" class="bar-fill" style="width:50%;background:linear-gradient(90deg,#22c55e,#86efac)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass rounded-lg px-4 py-2 mt-3 flex flex-col md:flex-row md:items-center gap-3">
+      <div class="min-w-[180px]">
+        <div class="text-[11px] text-cyan-300/70">Текущая форма</div>
+        <div id="stage-name" class="font-display text-lg neon-purple">61 кг (Старт)</div>
+      </div>
+      <div class="min-w-[90px] text-center">
+        <div class="text-[11px] text-cyan-300/70">Уровень</div>
+        <div id="lvl-val" class="font-display text-2xl neon-text">1</div>
+      </div>
+      <div class="flex-1">
+        <div class="flex justify-between text-[12px] mb-1">
+          <span>EXP: <span id="exp-cur" class="text-cyan-300">0</span> / <span id="exp-goal" class="text-cyan-300">750</span></span>
+          <span id="exp-pct" class="neon-text">0.00%</span>
+        </div>
+        <div class="bar-track h-3"><div id="exp-bar" class="bar-fill" style="width:0%;background:linear-gradient(90deg,var(--cyan),var(--purple))"></div></div>
+        <div class="text-[11px] text-cyan-300/60 mt-1">Остаток до следующей формы: <span id="exp-left" class="text-cyan-300">750</span> EXP</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= SIDEBAR ================= -->
+<div class="app-shell">
+<aside class="sidebar glass">
+  <div class="side-brand font-display neon-text">BIO&#8209;ARPG</div>
+  <nav class="side-nav">
+    <button class="side-btn active" data-tab="actions" data-call="switchTab" data-args="actions"><i class="fa-solid fa-gamepad"></i><span>Действия</span></button>
+    <button class="side-btn" data-tab="tree" data-call="switchTab" data-args="tree"><i class="fa-solid fa-snowflake"></i><span>Пассивки</span></button>
+    <button class="side-btn" data-tab="inv" data-call="switchTab" data-args="inv"><i class="fa-solid fa-shirt"></i><span>Инвентарь</span></button>
+    <button class="side-btn" data-tab="loot" data-call="switchTab" data-args="loot"><i class="fa-solid fa-box-open"></i><span>Лутбоксы</span></button>
+    <button class="side-btn" data-call="openStudio" title="Студия / Спонсор"><i class="fa-solid fa-tower-broadcast"></i><span>Студия</span></button>
+    <button class="side-btn" data-call="openShop" title="Магазин еды и бустов"><i class="fa-solid fa-cart-shopping"></i><span>Магазин</span></button>
+    <button class="side-btn" data-call="openTwitch" title="Интеграция Twitch"><i class="fa-solid fa-twitch"></i><span>Twitch</span></button>
+    <button class="side-btn" id="mg-btn" data-call="toggleMiniGame" title="Мини-игра тренировок"><i class="fa-solid fa-gamepad"></i><span>Мини-игра</span></button>
+    <button class="side-btn" id="music-btn" data-call="toggleMusic" title="Фоновая музыка"><i class="fa-solid fa-volume-xmark"></i><span>Музыка</span></button>
+    <button class="side-btn" id="track-btn" data-call="cycleMusicTrack" title="Сменить музыкальный трек"><i class="fa-solid fa-forward-step"></i><span>Трек</span></button>
+    <button class="side-btn" data-call="openDuels" title="Дуэли с ботами"><i class="fa-solid fa-robot"></i><span>Дуэли</span></button>
+    <button class="side-btn" data-call="openClan" title="Клан"><i class="fa-solid fa-shield-halved"></i><span>Клан</span></button>
+    <button class="side-btn" data-call="openStory" title="Сюжет"><i class="fa-solid fa-book-open"></i><span>Сюжет</span></button>
+    <button class="side-btn" data-call="openPrestige" title="Престиж / метапрогресс"><i class="fa-solid fa-arrows-rotate"></i><span>Престиж</span></button>
+  </nav>
+  <div class="side-foot">
+    <button class="side-btn" data-call="cycleTheme" title="Сменить тему"><i class="fa-solid fa-palette"></i><span>Тема</span></button>
+    <button class="side-btn" id="sound-btn" data-call="toggleSound" title="Звук"><i class="fa-solid fa-volume-xmark"></i><span>Звук</span></button>
+    <button class="side-btn" data-call="openAchievements" title="Достижения"><i class="fa-solid fa-trophy"></i><span>Ачивки</span></button>
+    <button class="side-btn" data-call="openLeaderboard" title="Топ стримеров"><i class="fa-solid fa-ranking-star"></i><span>Топ</span></button>
+    <button class="side-btn" data-call="openStats" title="Статистика"><i class="fa-solid fa-chart-line"></i><span>Стата</span></button>
+  </div>
+</aside>
+
+<main class="app-main">
+
+  <section id="tab-actions">
+    <div id="stuck-banner" class="stuck-banner" style="display:none;">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>Все основные действия заблокированы — используй <b>«Перезагрузку»</b> в разделе «Восстановление», чтобы восстановить немного энергии и настроения и выйти из тупика.</span>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="lg:col-span-4">
+        <div class="glass rounded-2xl p-4 text-center sticky top-[260px]">
+          <div class="relative">
+            <div class="absolute inset-0 pulse rounded-2xl"></div>
+            <img id="arpg-hero-img" src="" alt="hero" class="relative w-full max-w-[260px] mx-auto rounded-xl border border-cyan-400/30" />
+          </div>
+          <h2 id="hero-form" class="font-display text-xl neon-purple mt-3">61 кг — Старт</h2>
+          <div class="grid grid-cols-2 gap-2 mt-3 text-sm">
+            <div class="glass rounded-lg py-2"><div class="text-[11px] text-cyan-300/70">Очки Пассивок</div><div id="hero-pp" class="font-display text-lg neon-text">1</div></div>
+            <div class="glass rounded-lg py-2"><div class="text-[11px] text-cyan-300/70">Бонус Силы</div><div id="hero-str" class="font-display text-lg neon-text">+0</div></div>
+          </div>
+          <div class="mt-3 text-left text-[12px] text-cyan-200/80 glass rounded-lg p-2">
+            <div class="text-cyan-300/70 mb-1">Активные баффы:</div>
+            <div id="hero-buffs" class="space-y-1">—</div>
+          </div>
+          <div class="mt-3 text-left text-[12px] glass rounded-lg p-2 space-y-1">
+            <div class="vital-row"><span>Возраст</span><span id="v-age" class="neon-text font-display">18</span></div>
+            <div class="vital-row"><span>Голод</span><span id="v-hunger" class="neon-text font-display">100</span></div>
+            <div class="vital-row"><span>Сон-долг</span><span id="v-sleep" class="neon-text font-display">0</span></div>
+            <div class="vital-row"><span>Канал</span><span id="v-chan" class="neon-text font-display">1</span></div>
+            <div class="vital-row"><span>Сила</span><span id="v-str" class="neon-text font-display">0</span></div>
+            <div class="vital-row"><span>Выносл.</span><span id="v-sta" class="neon-text font-display">0</span></div>
+            <div class="vital-row"><span>Харизма</span><span id="v-cha" class="neon-text font-display">0</span></div>
+            <div class="vital-row"><span id="v-sponsor" class="text-pink-300/90">Спонсор: нет</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <h3 class="font-display text-cyan-300 mb-2 text-center"><i class="fa-solid fa-dumbbell"></i> Тренировки</h3>
+            <div id="col-train" class="space-y-3"></div>
+          </div>
+          <div>
+            <h3 class="font-display text-green-300 mb-2 text-center"><i class="fa-solid fa-money-bill-trend-up"></i> Заработок</h3>
+            <div id="col-work" class="space-y-3"></div>
+          </div>
+          <div>
+            <h3 class="font-display text-pink-300 mb-2 text-center"><i class="fa-solid fa-heart-pulse"></i> Восстановление</h3>
+            <div id="col-rest" class="space-y-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-tree" class="hidden">
+    <div class="glass rounded-2xl p-4 relative">
+      <h2 class="font-display text-xl neon-text text-center mb-2">Радиальное Древо Мутаций</h2>
+      <p class="text-center text-sm text-cyan-300/70 mb-3">Доступно очков: <span id="tree-pp" class="neon-purple font-display">1</span> · Клик по узлу — покупка мутации</p>
+      <div class="relative w-full flex justify-center">
+        <svg id="tree-svg" viewBox="0 0 1000 1000" class="w-full max-w-[860px]"></svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-inv" class="hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="lg:col-span-5">
+        <div class="glass rounded-2xl p-4">
+          <h3 class="font-display text-cyan-300 mb-3"><i class="fa-solid fa-shirt"></i> Экипировка</h3>
+          <div class="grid grid-cols-5 gap-2" id="equip-slots"></div>
+          <div class="mt-4 text-[12px] text-cyan-200/80 glass rounded-lg p-2">
+            <div class="text-cyan-300/70 mb-1">Суммарные бонусы экипировки:</div>
+            <div id="equip-bonus" class="space-y-1">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="lg:col-span-7">
+        <div class="glass rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-display text-cyan-300"><i class="fa-solid fa-backpack"></i> Сумка (клик — надеть / снять)</h3>
+            <button class="glass rounded-lg px-3 py-1.5 text-xs hover:bg-cyan-400/10" data-call="craftItems"><i class="fa-solid fa-wand-magic-sparkles"></i> Скрафтить</button>
+          </div>
+          <div class="grid grid-cols-4 sm:grid-cols-6 gap-2" id="inv-grid"></div>
+          <p id="inv-empty" class="text-cyan-300/50 text-sm mt-3">Сумка пуста. Открывай лутбоксы на Чёрном Рынке!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-loot" class="hidden">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div class="glass rounded-2xl p-5 text-center">
+        <div class="loot-chest pulse text-cyan-300"><i class="fa-solid fa-box"></i></div>
+        <h3 class="font-display text-lg mt-2">Простой Сундук</h3>
+        <p class="text-sm text-cyan-300/70">Базовая экипировка</p>
+        <p class="neon-purple font-display my-2">300 ₽</p>
+        <div class="flex gap-2 justify-center">
+          <button class="glass rounded-lg px-3 py-2 text-sm hover:bg-cyan-400/10" data-call="openLootContent" data-args="simple"><i class="fa-solid fa-list"></i> Содержимое</button>
+          <button class="glass rounded-lg px-3 py-2 text-sm hover:bg-cyan-400/10" data-call="openLoot" data-args="simple"><i class="fa-solid fa-lock-open"></i> Открыть</button>
+        </div>
+      </div>
+      <div class="glass rounded-2xl p-5 text-center">
+        <div class="loot-chest pulse text-purple-300"><i class="fa-solid fa-box-open"></i></div>
+        <h3 class="font-display text-lg mt-2">Элитный Сундук</h3>
+        <p class="text-sm text-cyan-300/70">Редкая и эпическая экипировка</p>
+        <p class="neon-purple font-display my-2">1000 ₽</p>
+        <div class="flex gap-2 justify-center">
+          <button class="glass rounded-lg px-3 py-2 text-sm hover:bg-cyan-400/10" data-call="openLootContent" data-args="elite"><i class="fa-solid fa-list"></i> Содержимое</button>
+          <button class="glass rounded-lg px-3 py-2 text-sm hover:bg-cyan-400/10" data-call="openLoot" data-args="elite"><i class="fa-solid fa-lock-open"></i> Открыть</button>
+        </div>
+      </div>
+      <div class="glass rounded-2xl p-5 text-center">
+        <div class="loot-chest pulse text-amber-300"><i class="fa-solid fa-gem"></i></div>
+        <h3 class="font-display text-lg mt-2">Легендарный Сундук</h3>
+        <p class="text-sm text-cyan-300/70">Эпическая и легендарная экипировка</p>
+        <p class="neon-purple font-display my-2">3500 ₽</p>
+        <div class="flex gap-2 justify-center">
+          <button class="glass rounded-lg px-3 py-2 text-sm hover:bg-cyan-400/10" data-call="openLootContent" data-args="legendary"><i class="fa-solid fa-list"></i> Содержимое</button>
+          <button class="glass rounded-lg px-3 py-2 text-sm hover:bg-cyan-400/10" data-call="openLoot" data-args="legendary"><i class="fa-solid fa-lock-open"></i> Открыть</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="loot-result" class="glass rounded-2xl p-5 mt-5 hidden text-center">
+      <div id="loot-anim" class="loot-chest text-cyan-300 mb-3"><i class="fa-solid fa-box"></i></div>
+      <h3 class="font-display text-lg">Результат открытия</h3>
+      <div id="loot-item" class="my-3 text-2xl font-display"></div>
+      <p id="loot-item-desc" class="text-sm text-cyan-300/70"></p>
+      <button class="glass rounded-lg px-4 py-2 mt-3 hover:bg-cyan-400/10" data-call="hideLootResult">Забрать в сумку</button>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<div id="node-tooltip" class="tooltip"></div>
+
+<div id="modal-gameover" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-gameover">
+  <div class="glass rounded-2xl p-8 max-w-md text-center relative">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-gameover"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <div class="text-6xl text-red-500 mb-3"><i class="fa-solid fa-skull"></i></div>
+    <h2 class="font-display text-2xl text-red-400 mb-2">КРИТИЧЕСКИЙ СРЫВ</h2>
+    <p id="gameover-reason" class="text-sm text-cyan-200/80 mb-4"></p>
+    <p class="text-xs text-cyan-300/60 mb-5">Прогресс сброшен. Старт заново: 61 кг, Level 1, 0 EXP, 500 ₽.</p>
+    <button class="glass rounded-lg px-6 py-3 font-display hover:bg-cyan-400/10" data-call="resetGame"><i class="fa-solid fa-rotate-right"></i> Начать заново</button>
+  </div>
+</div>
+
+<div id="modal-mutation" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-mutation">
+  <div class="glass rounded-2xl p-7 max-w-sm text-center relative">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-mutation"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <div id="mut-icon" class="text-5xl mb-2 text-cyan-300"><i class="fa-solid fa-dumbbell"></i></div>
+    <h2 id="mut-name" class="font-display text-xl neon-text"></h2>
+    <p id="mut-tier" class="text-sm text-purple-300 mb-2"></p>
+    <p id="mut-effect" class="text-sm text-cyan-200/80 mb-3"></p>
+    <p class="text-sm mb-4">Стоимость: <span id="mut-cost" class="neon-purple font-display"></span> очк. пассивок</p>
+    <button id="mut-buy" class="glass rounded-lg px-5 py-2 font-display hover:bg-cyan-400/10" data-call="buyMutation">Купить мутацию</button>
+  </div>
+</div>
+
+<div id="modal-lootcontent" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-lootcontent">
+  <div class="glass rounded-2xl p-6 max-w-lg relative">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-lootcontent"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 id="lootcontent-title" class="font-display text-xl neon-text mb-4"></h2>
+    <div id="lootcontent-list" class="space-y-2 max-h-[60vh] overflow-auto scrollbar"></div>
+  </div>
+</div>
+
+<div id="modal-cabinet" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-cabinet">
+  <div class="glass rounded-2xl p-6 max-w-md relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-cabinet"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <div class="flex items-center gap-4 mb-4">
+      <div id="cab-avatar" class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl glass"></div>
+      <div>
+        <div class="text-[11px] text-cyan-300/70">Личный кабинет</div>
+        <div id="cab-name" class="font-display text-xl neon-text"></div>
+        <div id="cab-form" class="text-[12px] text-purple-300"></div>
+      </div>
+    </div>
+    <div id="cab-stats" class="mb-4"></div>
+    <div class="glass rounded-lg p-3 mb-3">
+      <div class="text-[11px] text-cyan-300/70 mb-1">Глифы</div>
+      <div id="cab-glyphs" class="space-y-1"></div>
+    </div>
+    <div class="border-t border-cyan-400/20 pt-3">
+      <label class="text-[12px] text-cyan-300/80">Сменить позывной</label>
+      <div class="flex gap-2 mt-1">
+        <input id="cab-name-input" maxlength="18" class="callsign-input" placeholder="новый ник" />
+        <button class="glass rounded-lg px-4 text-sm hover:bg-cyan-400/10" data-call="saveCabinetName"><i class="fa-solid fa-check"></i></button>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button class="glass rounded-lg px-3 py-2 text-sm flex-1 hover:bg-cyan-400/10" data-call="exportSave"><i class="fa-solid fa-download"></i> Экспорт</button>
+        <button class="glass rounded-lg px-3 py-2 text-sm flex-1 hover:bg-cyan-400/10" data-call="importSave"><i class="fa-solid fa-upload"></i> Импорт</button>
+        <button class="glass rounded-lg px-3 py-2 text-sm flex-1 hover:bg-cyan-400/10" data-call="closeModal" data-args="modal-cabinet"><i class="fa-solid fa-xmark"></i> Закрыть</button>
+      </div>
+      <button class="glass rounded-lg px-4 py-2 text-sm w-full mt-2 hover:bg-cyan-400/10" data-call="exportProfileCard"><i class="fa-solid fa-image"></i> Экспорт карточки (PNG)</button>
+      <button class="glass rounded-lg px-4 py-2 text-sm w-full mt-2 hover:bg-red-400/10 text-red-300" data-call="wipeFromCabinet"><i class="fa-solid fa-trash"></i> Сброс прогресса</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TUTORIAL ================= -->
+<div id="screen-tutorial" class="tut-screen hidden">
+  <div class="tut-card glass rounded-2xl p-6 max-w-md scrollbar">
+    <div class="text-center mb-3">
+      <div class="font-display text-xl neon-purple" id="tut-step-label">Обучение 1 / 4</div>
+      <h2 class="font-display text-2xl neon-text mt-1" id="tut-title"></h2>
+    </div>
+    <p class="text-sm text-cyan-200/80 mb-5" id="tut-body"></p>
+    <div class="flex items-center justify-between">
+      <div id="tut-dots" class="flex gap-2"></div>
+      <div class="flex gap-2">
+        <button class="glass rounded-lg px-4 py-2 text-sm hover:bg-cyan-400/10" id="tut-skip" data-call="closeTutorial" data-args="true">Пропустить</button>
+        <button class="glass rounded-lg px-4 py-2 text-sm font-display neon-text hover:bg-cyan-400/10" id="tut-next" data-call="tutNext">Далее</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ACHIEVEMENTS ================= -->
+<div id="modal-achievements" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-achievements">
+  <div class="glass rounded-2xl p-6 max-w-lg relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-achievements"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-4"><i class="fa-solid fa-trophy"></i> Достижения</h2>
+    <div id="ach-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-auto scrollbar"></div>
+  </div>
+</div>
+
+<!-- ================= EVENT ================= -->
+<div id="modal-event" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-event">
+  <div class="glass rounded-2xl p-6 max-w-md relative text-center scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-event"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <div id="ev-icon" class="text-5xl mb-2 neon-purple"><i class="fa-solid fa-bolt"></i></div>
+    <h2 id="ev-title" class="font-display text-xl neon-text mb-1"></h2>
+    <p id="ev-desc" class="text-sm text-cyan-200/80 mb-4"></p>
+    <div id="ev-choices" class="space-y-2"></div>
+  </div>
+</div>
+
+<!-- ================= CHAT FEED ================= -->
+<div id="chat-panel" class="glass">
+  <div class="chat-head"><i class="fa-solid fa-comments"></i> Чат стрима <span class="chat-live">LIVE</span> <span class="chat-viewers"><i class="fa-solid fa-eye"></i> <span id="chat-viewers">0</span></span>
+    <span class="chat-tools">
+      <button class="chat-tool" title="Сторона" data-call="toggleChatSide"><i class="fa-solid fa-arrows-left-right"></i></button>
+      <button class="chat-tool" title="Скрыть" data-call="toggleChat"><i class="fa-solid fa-eye-slash"></i></button>
+    </span>
+  </div>
+  <div id="chat-feed" class="chat-feed scrollbar"></div>
+</div>
+
+<button id="chat-show-btn" class="chat-show-btn" data-call="toggleChat" title="Показать чат"><i class="fa-solid fa-comments"></i> Чат</button>
+
+<!-- ================= LEADERBOARD ================= -->
+<div id="modal-leaderboard" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-leaderboard">
+  <div class="glass rounded-2xl p-6 max-w-lg relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-leaderboard"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-4"><i class="fa-solid fa-ranking-star"></i> Топ стримеров (локально)</h2>
+    <div id="lb-list" class="space-y-1 max-h-[60vh] overflow-auto scrollbar"></div>
+  </div>
+</div>
+
+<!-- ================= STATS ================= -->
+<div id="modal-stats" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-stats">
+  <div class="glass rounded-2xl p-6 max-w-lg relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-stats"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-4"><i class="fa-solid fa-chart-line"></i> Статистика и прогресс</h2>
+    <div class="glass rounded-lg p-3 mb-3">
+      <div class="text-[11px] text-cyan-300/70 mb-1">Кривая EXP</div>
+      <div id="stat-spark-exp"></div>
+    </div>
+    <div class="glass rounded-lg p-3 mb-3">
+      <div class="text-[11px] text-cyan-300/70 mb-1">Динамика веса (кг)</div>
+      <div id="stat-spark-w"></div>
+    </div>
+    <div id="stat-rows"></div>
+  </div>
+</div>
+
+<!-- ================= SHOP ================= -->
+<div id="modal-shop" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-shop">
+  <div class="glass rounded-2xl p-6 max-w-lg relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-shop"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-4"><i class="fa-solid fa-cart-shopping"></i> Магазин еды и бустов</h2>
+    <div id="shop-list" class="space-y-2 max-h-[60vh] overflow-auto scrollbar"></div>
+  </div>
+</div>
+
+<!-- ================= TWITCH ================= -->
+<div id="modal-twitch" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-twitch">
+  <div class="glass rounded-2xl p-6 max-w-lg relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-twitch"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-3"><i class="fa-solid fa-twitch"></i> Интеграция Twitch</h2>
+    <p class="text-[12px] text-cyan-300/70 mb-3">Подключи свой канал: реальные подписчики, статус эфира и живой чат будут отображаться в игре. Нужен Client ID твоего Twitch-приложения (регистрируется бесплатно на dev.twitch.tv, Redirect URI — адрес этой страницы).</p>
+    <label class="text-[12px] text-cyan-300/80">Client ID</label>
+    <input id="tw-client" class="callsign-input w-full mb-2" placeholder="вставь Client ID" />
+    <button class="w-full glass rounded-xl py-2 neon-text hover:bg-cyan-400/10 mb-2" data-call="startTwitchAuth"><i class="fa-solid fa-right-to-bracket"></i> Войти через Twitch</button>
+    <div class="text-[11px] text-cyan-300/60 mb-2">или вставь полученный токен вручную:</div>
+    <input id="tw-token" class="callsign-input w-full mb-2" placeholder="access_token" />
+    <button class="w-full glass rounded-xl py-2 neon-purple hover:bg-pink-400/10 mb-3" data-call="applyTwitchToken">Применить токен</button>
+    <div id="tw-status" class="glass rounded-lg p-3 text-[12px] text-cyan-200/80">Не подключено.</div>
+    <label class="flex items-center gap-2 mt-3 text-[12px] text-cyan-300/80">
+      <input type="checkbox" id="tw-chat" onchange="toggleTwitchChat(this.checked)" /> Показывать реальный чат Twitch в игре
+    </label>
+  </div>
+</div>
+
+<!-- ================= MINIGAME ================= -->
+<div id="modal-minigame" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-minigame">
+  <div class="glass rounded-2xl p-6 max-w-md relative text-center scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-minigame"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-2">Мини-игра: попади в центр!</h2>
+    <p class="text-[12px] text-cyan-300/70 mb-4">Останови бегунок как можно ближе к центру для бонуса EXP к тренировке.</p>
+    <div class="mini-track" id="mini-track"><div class="mini-zone"></div><div class="mini-marker" id="mini-marker"></div></div>
+    <button class="w-full glass rounded-xl py-3 mt-5 font-display neon-text hover:bg-cyan-400/10" data-call="stopMinigame"><i class="fa-solid fa-hand"></i> СТОП</button>
+  </div>
+</div>
+
+<!-- ================= DUELS ================= -->
+<div id="modal-duel" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-duel">
+  <div class="glass rounded-2xl p-6 max-w-lg relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-duel"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-2"><i class="fa-solid fa-robot"></i> Дуэли со стримерами-ботами</h2>
+    <div id="duel-power" class="text-[13px] text-cyan-300/80 mb-3"></div>
+    <div id="duel-list" class="space-y-2 max-h-[55vh] overflow-auto scrollbar"></div>
+  </div>
+</div>
+
+<!-- ================= CLAN ================= -->
+<div id="modal-clan" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-clan">
+  <div class="glass rounded-2xl p-6 max-w-md relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-clan"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-2"><i class="fa-solid fa-shield-halved"></i> Клан</h2>
+    <p class="text-[12px] text-cyan-300/70 mb-2">Вступи в локальный клан (хранится на этом устройстве) для <b>+5% дохода</b>.</p>
+    <input id="clan-input" class="callsign-input w-full mb-2" placeholder="название клана" maxlength="18" />
+    <button class="w-full glass rounded-xl py-2 neon-text hover:bg-cyan-400/10" data-call="setClan">Сохранить клан</button>
+  </div>
+</div>
+
+<!-- ================= STORY ================= -->
+<div id="modal-story" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-story">
+  <div class="glass rounded-2xl p-6 max-w-lg relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-story"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-3"><i class="fa-solid fa-book-open"></i> Сюжетные главы</h2>
+    <div id="story-list" class="space-y-2 max-h-[60vh] overflow-auto scrollbar"></div>
+  </div>
+</div>
+
+<!-- ================= PRESTIGE ================= -->
+<div id="modal-prestige" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-prestige">
+  <div class="glass rounded-2xl p-6 max-w-md relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-prestige"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-3"><i class="fa-solid fa-arrows-rotate"></i> Престиж / метапрогресс</h2>
+    <div id="prestige-info" class="glass rounded-lg p-3 text-[13px] text-cyan-200/80 mb-3"></div>
+    <button class="w-full glass rounded-xl py-2 neon-purple hover:bg-pink-400/10" data-call="doPrestige">Сделать престиж</button>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<!-- ================= STUDIO / SPONSOR ================= -->
+<div id="modal-studio" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-studio">
+  <div class="glass rounded-2xl p-6 max-w-lg relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-studio"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-4"><i class="fa-solid fa-tower-broadcast"></i> Студия и Спонсоры</h2>
+    <div class="glass rounded-lg p-3 mb-3">
+      <div class="flex justify-between items-center">
+        <div>
+          <div class="font-display text-cyan-200">Уровень студии: <span id="studio-lvl">0</span></div>
+          <div class="text-[11px] text-cyan-300/70">-5% энергии на тренировки и +5% дохода за уровень</div>
+        </div>
+      </div>
+      <button id="studio-buy" class="w-full mt-3 glass rounded-xl py-2 neon-text hover:bg-cyan-400/10" data-call="buyStudio">Апгрейд: <span id="studio-cost">500</span> ₽</button>
+    </div>
+    <div class="glass rounded-lg p-3">
+      <div class="font-display text-pink-200 mb-1">Спонсорский контракт</div>
+      <div class="text-[11px] text-cyan-300/70 mb-2" id="sponsor-info">Нет активного контракта. Нужен канал ≥ 5.</div>
+      <button class="w-full glass rounded-xl py-2 neon-purple hover:bg-pink-400/10" data-call="acceptSponsor">Принять спонсора (+10% дохода, 7 дней)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ENDING ================= -->
+<div id="modal-ending" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-ending">
+  <div class="glass rounded-2xl p-8 max-w-md relative text-center scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-ending"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <div id="end-icon" class="text-6xl neon-purple mb-4"><i class="fa-solid fa-crown"></i></div>
+    <h2 id="end-title" class="font-display text-3xl neon-text mb-3">Концовка</h2>
+    <p id="end-text" class="text-cyan-200/90 mb-5"></p>
+    <div class="text-[11px] text-cyan-300/60 mb-4">Достижение записано в профиль и Топ.</div>
+    <button class="w-full glass rounded-xl py-2 neon-text hover:bg-cyan-400/10" data-call="closeModal" data-args="modal-ending">Продолжить</button>
+  </div>
+</div>
+
+<script src="js/background.js"></script>
+<script src="js/data.js"></script>
+<script src="js/game.js"></script>
+<script src="js/events.js"></script>
+</body>
+</html>
