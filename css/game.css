@@ -109,7 +109,7 @@ body{
 }
 .modal-backdrop{ position:fixed; inset:0; background:rgba(2,4,12,0.78); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; }
 .modal-backdrop.show{ display:flex; }
-.modal-backdrop > div{ max-height:100%; overflow-y:auto; }
+.modal-backdrop > div{ max-height:100%; overflow-y:auto; overflow-x:hidden; }
 .slot{ aspect-ratio:1/1; border:1px dashed rgba(0,243,255,0.4); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:all .2s; }
 .slot.filled{ border-style:solid; background:rgba(0,243,255,0.06); }
 .inv-cell{ aspect-ratio:1/1; border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:all .15s; font-size:11px; text-align:center; padding:4px; }

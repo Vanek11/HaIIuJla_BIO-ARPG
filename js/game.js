@@ -132,6 +132,7 @@ function clamp(v){ return Math.max(0, Math.min(100, v)); }
 /* ---------------- Perform a training action ---------------- */
 function doTrain(t, opt){
   opt = opt || {};
+  if(gameOverActive){ toast('Забег окончен — начни заново','bad'); return; }
   const mult = opt.mult || 1;
   const lvl = level();
   if(lvl < t.lvl){ toast('Действие заблокировано: нужен '+t.lvl+' уровень','bad'); return; }
@@ -143,8 +144,8 @@ function doTrain(t, opt){
   state.energy = clamp(state.energy - enCost);
   state.hp = clamp(state.hp - hpCost);
   if(t.money>0) state.money -= t.money;
-  // mental fatigue: harder trainings cost more mood
-  state.mood = clamp(state.mood - (3 + Math.floor(t.energy/12)));
+  // mental fatigue: harder trainings cost more mood (reduced by m_mood)
+  state.mood = clamp(state.mood - (3 + Math.floor(t.energy/12))*(1 - 0.06*metaUp('m_mood')));
   // diminishing returns for spamming the same exercise
   state.daily.trainById = state.daily.trainById || {};
   state.daily.trainById[t.id] = (state.daily.trainById[t.id]||0) + 1;
@@ -156,8 +157,8 @@ function doTrain(t, opt){
   state.daily.train++;
   state.weekly.train++;
   state.attr.str += 1;
-  state.hunger = clamp(state.hunger - 2);
-  petExpGain(Math.round(gain/10));
+  state.hunger = clamp(state.hunger - 2*(1 - 0.1*metaUp('m_hunger')));
+  petExpGain(Math.round(gain/10*(1 + 0.15*metaUp('m_pet'))));
   toast('Тренировка: +'+gain+' EXP'+(rep>1?' (x'+dim.toFixed(2)+' повтор)':'')+(mult!==1?' (x'+mult.toFixed(2)+' мини-игра)':''),'good');
   sfx('buy');
   afterAction();
@@ -175,7 +176,6 @@ function openMinigame(t){
   pendingTrain = t;
   const track = document.getElementById('mini-track');
   const mark = document.getElementById('mini-marker');
-  if(track) track.style.left = '50%';
   if(mark) mark.style.left = '0%';
   miniPos = 0; miniDir = 1;
   openModal('modal-minigame');
@@ -202,12 +202,13 @@ function stopMinigame(){
 
 /* ---------------- Perform a work action ---------------- */
 function doWork(w){
+  if(gameOverActive){ toast('Забег окончен — начни заново','bad'); return; }
   const lvl = level();
   if(lvl < w.lvl){ toast('Действие заблокировано: нужен '+w.lvl+' уровень','bad'); return; }
   if(state.energy < w.energy){ toast('Недостаточно Бодрости!','bad'); return; }
   if(state.mood < w.mood){ toast('Недостаточно Настроения!','bad'); return; }
   state.energy = clamp(state.energy - w.energy);
-  state.mood = clamp(state.mood - w.mood*moodLossMult());
+  state.mood = clamp(state.mood - w.mood*moodLossMult()*(1 - 0.06*metaUp('m_mood')));
   const earn = Math.round(w.money*incomeMult()) + artifactMoney();
   state.money += earn;
   state.stats.work++;
@@ -224,6 +225,7 @@ function doWork(w){
 
 /* ---------------- Perform a rest action ---------------- */
 function doRest(r){
+  if(gameOverActive){ toast('Забег окончен — начни заново','bad'); return; }
   const lvl = level();
   if(lvl < r.lvl){ toast('Действие заблокировано: нужен '+r.lvl+' уровень','bad'); return; }
   if(r.id==='r1' && state.daily.slept){ toast('Ты уже спал сегодня. Восстанавливайся отдыхом или поработай.','bad'); sfx('error'); return; }
@@ -893,6 +895,7 @@ function submitProfile(){
   if(cabClass==='monk'){ state.mood = 100; }
   state.money += metaUp('m_capital')*1000;
   state.passPoints += metaUp('m_pp');
+  if(metaUp('m_starter')){ state.inventory.push(rollItem('elite')); toast('Сундук новичка: редкий предмет в сумке!','good'); }
   hideStartScreen();
   renderAll();
   saveGame();
@@ -1144,7 +1147,7 @@ function metaUp(id){
 function clanMult(){ return state.clan ? 1.05 : 1; }
 function petIncomeMult(){ return 1 + (state.pet?state.pet.level:1)*0.03; }
 function petRecMult(){ return 1 + (state.pet?(state.pet.level-1):0)*0.03; }
-function streakMult(){ return 1 + Math.min(state.streak.count||0, 7)*0.05; }
+function streakMult(){ return 1 + Math.min(state.streak.count||0, 7)*(0.05 + 0.01*metaUp('m_streak')); }
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 
 function ensureDaily(){ if(state.daily.date !== todayStr()){ state.daily = { date:todayStr(), train:0, earn:0, loot:0, mut:0, claimed:false, slept:false, trainById:{} }; } }
@@ -1556,10 +1559,13 @@ function openStory(){
 
 /* ---- Prestige / metaprogression ---- */
 function prestigeGain(){ return Math.floor(level()/5); }
-function openPrestige(){
+function renderPrestigeInfo(){
   document.getElementById('prestige-info').innerHTML =
     'Текущий уровень: <b>'+level()+'</b> · Мета-очки: <b>'+(state.meta?state.meta.points:0)+'</b><br>'+
     (level()>=20 ? 'За престиж ты получишь <b>+'+prestigeGain()+'</b> мета-очков (каждый мета-уровень +2% к EXP и доходу навсегда) и начнёшь заново, сохранив профиль, класс, нишу, глифы, ачивки и клан.' : 'Нужен <b>20 уровень</b>, чтобы сделать престиж.');
+}
+function openPrestige(){
+  renderPrestigeInfo();
   renderMetaShop();
   openModal('modal-prestige');
 }
@@ -1596,6 +1602,7 @@ function buyMeta(id){
   state.meta.up[id] = lvl+1;
   toast(u.name+': уровень '+(lvl+1),'good');
   sfx('buy');
+  renderPrestigeInfo();
   renderMetaShop();
   renderAll();
   saveGame();
@@ -1976,8 +1983,8 @@ document.addEventListener('keydown', function(e){
   const tag = e.target && e.target.tagName;
   if(tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT') return;
   if(e.code==='Escape'){
-    const open = document.querySelectorAll('.modal-backdrop.show');
-    if(open.length) closeModal(open[open.length-1].id);
+    const closable = [...document.querySelectorAll('.modal-backdrop.show')].filter(m=>m.id!=='modal-gameover');
+    if(closable.length) closeModal(closable[closable.length-1].id);
     return;
   }
   if(e.code==='KeyM'){ toggleMusic(); return; }
