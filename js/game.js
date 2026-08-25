@@ -954,7 +954,25 @@ function cycleTheme(){ applyTheme(themeIdx+1); toast('Тема: '+THEMES[themeId
 /* ---- Sound (WebAudio) ---- */
 let soundOn = false;
 let audioCtx = null;
-function ensureAudio(){ if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return audioCtx; }
+let sfxGain = null;
+let sfxVolume = parseFloat(localStorage.getItem('bioarpg_vol_sfx'));
+if(isNaN(sfxVolume)) sfxVolume = 1;
+function ensureAudio(){
+  if(!audioCtx){
+    try{
+      audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      sfxGain = audioCtx.createGain();
+      sfxGain.gain.value = sfxVolume;
+      sfxGain.connect(audioCtx.destination);
+    }catch(e){}
+  }
+  return audioCtx;
+}
+function setSfxVolume(v){
+  sfxVolume = v;
+  try{ localStorage.setItem('bioarpg_vol_sfx', String(v)); }catch(e){}
+  if(sfxGain) sfxGain.gain.value = v;
+}
 function sfx(type){
   if(!soundOn) return;
   const ctx = ensureAudio(); if(!ctx) return;
@@ -966,7 +984,7 @@ function sfx(type){
   if(cfg[2]==='up'){ o.frequency.exponentialRampToValueAtTime(cfg[0]*2, ctx.currentTime+0.12); }
   g.gain.value = 0.06;
   g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+cfg[1]);
-  o.connect(g); g.connect(ctx.destination);
+  o.connect(g); g.connect(sfxGain||ctx.destination);
   o.start(); o.stop(ctx.currentTime+cfg[1]);
 }
 function toggleSound(){
@@ -1551,7 +1569,7 @@ const MUSIC_TRACKS=[
 const Music = (function(){
   let ctx=null, master=null, delaySend=null, noise=null;
   let timer=null, nextTime=0, step=0, running=false;
-  let cfgIdx=0, TR=MUSIC_TRACKS[0];
+  let cfgIdx=0, TR=MUSIC_TRACKS[0], vol=0.16;
   try{ const v=parseInt(localStorage.getItem('bioarpg_track')); if(!isNaN(v)) cfgIdx=((v%MUSIC_TRACKS.length)+MUSIC_TRACKS.length)%MUSIC_TRACKS.length; }catch(e){}
   TR=MUSIC_TRACKS[cfgIdx];
   const SD = () => 60/TR.bpm/4;
@@ -1669,7 +1687,7 @@ const Music = (function(){
     running=true; step=0; nextTime=ctx.currentTime+0.1;
     master.gain.cancelScheduledValues(ctx.currentTime);
     master.gain.setValueAtTime(0.0001,ctx.currentTime);
-    master.gain.linearRampToValueAtTime(0.16,ctx.currentTime+1.2);
+    master.gain.linearRampToValueAtTime(vol,ctx.currentTime+1.2);
     if(timer) clearInterval(timer);
     timer=setInterval(schedule,90); schedule();
   }
@@ -1680,6 +1698,15 @@ const Music = (function(){
     master.gain.cancelScheduledValues(t);
     master.gain.setValueAtTime(master.gain.value,t);
     master.gain.linearRampToValueAtTime(0.0001,t+0.6);
+  }
+  function setVolume(v){
+    vol = v;
+    if(master && running){
+      const t=ctx.currentTime;
+      master.gain.cancelScheduledValues(t);
+      master.gain.setValueAtTime(master.gain.value,t);
+      master.gain.linearRampToValueAtTime(Math.max(v,0.0001),t+0.15);
+    }
   }
   function toggle(){
     ensure(); ctx.resume();
@@ -1695,8 +1722,27 @@ const Music = (function(){
     if(was) start();
     return TR.name;
   }
-  return { toggle:toggle, next:next, trackName:function(){ return TR.name; }, isPlaying:function(){ return running; } };
+  function playIndex(i){
+    i = ((i%MUSIC_TRACKS.length)+MUSIC_TRACKS.length)%MUSIC_TRACKS.length;
+    if(i === cfgIdx) return TR.name;
+    const was = running;
+    if(was) stop();
+    cfgIdx = i; TR = MUSIC_TRACKS[cfgIdx];
+    try{ localStorage.setItem('bioarpg_track', String(cfgIdx)); }catch(e){}
+    if(was) start();
+    return TR.name;
+  }
+  return { toggle:toggle, next:next, playIndex:playIndex, setVolume:setVolume,
+           trackName:function(){ return TR.name; }, isPlaying:function(){ return running; } };
 })();
+
+/* volume modal */
+function openVolume(){
+  const m = document.getElementById('vol-music'), s = document.getElementById('vol-sfx');
+  if(m) m.value = Math.round(parseFloat(localStorage.getItem('bioarpg_vol_music')||'0.16')*100);
+  if(s) s.value = Math.round(sfxVolume*100);
+  openModal('modal-volume');
+}
 function cycleMusicTrack(){
   try{
     const name = Music.next();
@@ -1742,6 +1788,19 @@ if(state.musicOn && !Music.isPlaying()){
   document.addEventListener('click', startMusicOnce, true);
 }
 startEvents();
+
+/* volume sliders: live apply + persist */
+(function(){
+  const m = document.getElementById('vol-music'), s = document.getElementById('vol-sfx');
+  const savedMusic = parseFloat(localStorage.getItem('bioarpg_vol_music'));
+  if(!isNaN(savedMusic)) Music.setVolume(savedMusic);
+  if(m) m.addEventListener('input', function(){
+    const v = m.value/100;
+    Music.setVolume(v);
+    try{ localStorage.setItem('bioarpg_vol_music', String(v)); }catch(e){}
+  });
+  if(s) s.addEventListener('input', function(){ setSfxVolume(s.value/100); });
+})();
 
 /* Twitch OAuth return: capture token from URL hash */
 (function(){

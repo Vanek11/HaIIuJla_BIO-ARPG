@@ -125,6 +125,7 @@
   <div class="side-foot">
     <button class="side-btn" data-call="cycleTheme" title="Сменить тему"><i class="fa-solid fa-palette"></i><span>Тема</span></button>
     <button class="side-btn" id="sound-btn" data-call="toggleSound" title="Звук"><i class="fa-solid fa-volume-xmark"></i><span>Звук</span></button>
+    <button class="side-btn" data-call="openVolume" title="Громкость"><i class="fa-solid fa-sliders"></i><span>Громк.</span></button>
     <button class="side-btn" data-call="openAchievements" title="Достижения"><i class="fa-solid fa-trophy"></i><span>Ачивки</span></button>
     <button class="side-btn" data-call="openLeaderboard" title="Топ стримеров"><i class="fa-solid fa-ranking-star"></i><span>Топ</span></button>
     <button class="side-btn" data-call="openStats" title="Статистика"><i class="fa-solid fa-chart-line"></i><span>Стата</span></button>
@@ -386,6 +387,18 @@
 
 
 <button id="chat-show-btn" class="chat-show-btn" data-call="toggleChat" title="Показать чат"><i class="fa-solid fa-comments"></i> Чат</button>
+
+<!-- ================= VOLUME ================= -->
+<div id="modal-volume" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-volume">
+  <div class="glass rounded-2xl p-6 max-w-sm w-full relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-volume"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-4"><i class="fa-solid fa-sliders"></i> Громкость</h2>
+    <label class="block text-[12px] text-cyan-300/80 mb-1"><i class="fa-solid fa-music"></i> Музыка</label>
+    <input id="vol-music" type="range" min="0" max="100" value="16" class="w-full accent-cyan-400 mb-4" />
+    <label class="block text-[12px] text-cyan-300/80 mb-1"><i class="fa-solid fa-volume-high"></i> Звуковые эффекты</label>
+    <input id="vol-sfx" type="range" min="0" max="100" value="100" class="w-full accent-cyan-400" />
+  </div>
+</div>
 
 <!-- ================= LEADERBOARD ================= -->
 <div id="modal-leaderboard" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-leaderboard">
