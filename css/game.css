@@ -10,6 +10,10 @@ body{
   /* transparent so the shared interactive canvas shows through */
   background:transparent;
   min-height:100vh;
+  /* app layout: fixed viewport frame, no page scroll — inner areas scroll instead */
+  height:100vh; height:100dvh;
+  overflow:hidden;
+  display:flex; flex-direction:column;
 }
 /* native cursor is replaced by the themed one everywhere */
 *{ cursor:none !important; }
@@ -103,8 +107,9 @@ body{
   padding:10px 12px; font-size:13px; box-shadow:0 0 18px rgba(0,243,255,0.4);
   opacity:0; transition:opacity .12s;
 }
-.modal-backdrop{ position:fixed; inset:0; background:rgba(2,4,12,0.78); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:1000; }
+.modal-backdrop{ position:fixed; inset:0; background:rgba(2,4,12,0.78); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; }
 .modal-backdrop.show{ display:flex; }
+.modal-backdrop > div{ max-height:100%; overflow-y:auto; }
 .slot{ aspect-ratio:1/1; border:1px dashed rgba(0,243,255,0.4); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:all .2s; }
 .slot.filled{ border-style:solid; background:rgba(0,243,255,0.06); }
 .inv-cell{ aspect-ratio:1/1; border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:all .15s; font-size:11px; text-align:center; padding:4px; }
@@ -187,18 +192,45 @@ body{
   position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.35; mix-blend-mode:overlay;
   background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,243,255,0.05) 3px, rgba(0,0,0,0) 4px);
 }
-.app-shell{ display:flex; align-items:flex-start; gap:18px; max-width:1400px; margin:0 auto; padding:18px; }
-.sidebar{ width:230px; flex:0 0 230px; position:sticky; top:96px; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:10px; max-height:calc(100vh - 120px); }
-.side-brand{ font-size:18px; letter-spacing:1px; text-align:center; padding-bottom:8px; border-bottom:1px solid rgba(0,243,255,.2); }
-.side-nav{ display:flex; flex-direction:column; gap:8px; }
-.side-btn{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; color:#cfeaff; background:rgba(13,20,40,.5); border:1px solid transparent; cursor:pointer; transition:.18s; font-size:14px; }
+.app-shell{
+  flex:1 1 auto; min-height:0;               /* fill viewport under the header */
+  display:flex; align-items:stretch; gap:18px;
+  width:100%; max-width:1400px; margin:0 auto; padding:14px 18px 16px;
+}
+.sidebar{ width:230px; flex:0 0 230px; height:100%; overflow-y:auto; border-radius:18px; padding:12px; display:flex; flex-direction:column; gap:8px; }
+.side-brand{ font-size:17px; letter-spacing:1px; text-align:center; padding-bottom:6px; border-bottom:1px solid rgba(0,243,255,.2); }
+.side-nav{ display:flex; flex-direction:column; gap:6px; }
+.side-btn{ display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; color:#cfeaff; background:rgba(13,20,40,.5); border:1px solid transparent; cursor:pointer; transition:.18s; font-size:13.5px; }
 .side-btn i{ width:22px; text-align:center; font-size:17px; }
 .side-btn:hover{ border-color:var(--cyan); transform:translateX(3px); }
 .side-btn.active{ border-color:var(--cyan); background:rgba(0,243,255,.1); box-shadow:0 0 14px rgba(0,243,255,.35); color:#fff; }
 .side-foot{ margin-top:auto; padding-top:12px; border-top:1px solid rgba(0,243,255,.2); display:flex; gap:8px; }
 .side-foot .side-btn{ flex:1; flex-direction:column; gap:4px; font-size:11px; padding:10px 0; justify-content:center; }
 .side-foot .side-btn i{ font-size:16px; }
-.app-main{ flex:1 1 auto; min-width:0; }
+.app-main{ flex:1 1 auto; min-width:0; height:100%; overflow-y:auto; padding-right:6px; padding-bottom:4px; }
+body > header{ flex:0 0 auto; }
+#tree-svg{ max-width:min(860px, 100%); height:auto; }
+
+/* --- compact modes: fit laptops / small monitors without page scroll --- */
+@media (max-height:1040px){
+  .app-shell{ gap:12px; padding:10px 14px 12px; }
+  .sidebar{ padding:8px; gap:6px; }
+  body > header .max-w-7xl{ padding-top:6px; padding-bottom:6px; }
+  /* two-column launcher nav so all buttons fit short screens */
+  .side-nav{ display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+  .side-btn{ padding:7px 6px; font-size:11px; gap:3px; flex-direction:column; text-align:center; justify-content:center; }
+  .side-btn i{ width:auto; font-size:15px; }
+  .side-btn:hover{ transform:none; }
+  .side-brand{ font-size:14px; padding-bottom:4px; }
+  .side-foot{ padding-top:6px; }
+  .side-foot .side-btn{ padding:6px 0; }
+  #tree-svg{ max-width:min(860px, 100%, calc(100vh - 230px)); }
+}
+@media (max-height:740px){
+  .side-brand{ display:none; }
+  .chat-panel,#chat-panel{ max-height:180px; }
+  #tree-svg{ max-width:min(860px, 100%, calc(100vh - 190px)); }
+}
 
 .tab-in{ animation:tabIn .35s ease; }
 @keyframes tabIn{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
