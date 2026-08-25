@@ -70,6 +70,7 @@
     <div class="flex items-center gap-1.5">
       <button class="text-[11px] glass rounded px-2 py-1 hover:bg-cyan-400/10" data-call="openCabinet"><i class="fa-solid fa-id-card"></i> Кабинет</button>
       <button class="text-[11px] glass rounded px-2 py-1 hover:bg-cyan-400/10" data-call="wipeProgress"><i class="fa-solid fa-trash"></i> Сброс</button>
+      <button class="text-[11px] glass rounded px-2 py-1 hover:bg-cyan-400/10" data-call="openHelp" title="Справка (F1)"><i class="fa-solid fa-circle-question"></i></button>
     </div>
     <div class="grid grid-cols-4 gap-2 flex-1 min-w-[380px] max-w-2xl">
       <div class="glass rounded-lg px-2.5 py-1">
@@ -403,6 +404,34 @@
     <h2 class="font-display text-xl neon-text mb-1"><i class="fa-solid fa-list-check"></i> Задания недели</h2>
     <p class="text-[11px] text-cyan-300/60 mb-4">Обновляются каждую неделю · прогресс идёт от тренировок, стримов и сундуков</p>
     <div id="weekly-list"></div>
+  </div>
+</div>
+
+<!-- ================= HELP ================= -->
+<div id="modal-help" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-help">
+  <div class="glass rounded-2xl p-6 max-w-2xl w-full relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-help"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-4"><i class="fa-solid fa-circle-question"></i> Справка</h2>
+
+    <div class="text-[13px] text-cyan-100/90 space-y-3">
+      <p><b class="text-cyan-300">Цель:</b> раскачать тело с 61 до 110 кг (34 500 EXP). Тренировки дают EXP, но жгут Бодрость, HP и Настроение; работа даёт ₽, но тратит Бодрость и Настроение. Сон раз в день снимает усталость, но требует аренды.</p>
+      <p><b class="text-cyan-300">EXP тренировки:</b> база × штраф повтора (−12% за каждый повтор действия за день, минимум ×0.3) × все множители ниже + бонус Силы.</p>
+      <div id="help-mults" class="glass rounded-lg p-3 text-[12px] space-y-1"></div>
+      <p><b class="text-cyan-300">Штрафы:</b> Голод &lt; 30 → EXP ×0.7; Настроение 0 или HP 0 → конец забега. Повтор одной тренировки за день → −12% за повтор.</p>
+      <p><b class="text-cyan-300">Задания недели</b> сбрасываются каждую неделю, прогресс идёт от тренировок/стримов/сундуков. <b class="text-cyan-300">Престиж</b> (с 20 уровня) обнуляет забег, но даёт мета-очки: каждый +2% к EXP и доходу навсегда, плюс их можно тратить в мета-магазине.</p>
+      <div class="glass rounded-lg p-3 text-[12px]">
+        <div class="text-cyan-300 mb-1"><i class="fa-solid fa-keyboard"></i> Горячие клавиши</div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+          <span><kbd class="text-cyan-300">1–6</kbd> — тренировки</span>
+          <span><kbd class="text-cyan-300">Q W E R T</kbd> — заработок</span>
+          <span><kbd class="text-cyan-300">A S D F G H J</kbd> — восстановление</span>
+          <span><kbd class="text-cyan-300">Esc</kbd> — закрыть окно</span>
+          <span><kbd class="text-cyan-300">M</kbd> — музыка вкл/выкл</span>
+          <span><kbd class="text-cyan-300">C</kbd> — сменить тему</span>
+          <span><kbd class="text-cyan-300">F1 / ?</kbd> — эта справка</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

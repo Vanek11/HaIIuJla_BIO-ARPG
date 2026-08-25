@@ -1761,6 +1761,23 @@ function openVolume(){
   openModal('modal-volume');
 }
 
+/* ---- Help modal ---- */
+function openHelp(){
+  const wrap = document.getElementById('help-mults');
+  if(wrap){
+    const rows = [
+      ['Множитель EXP', '×'+expMult().toFixed(2)],
+      ['Множитель дохода', '×'+incomeMult().toFixed(2)],
+      ['Серия дней', (state.streak.count||0)+' дн. · ×'+streakMult().toFixed(2)],
+      ['Мета-бонус', '×'+metaMult().toFixed(2)],
+      ['Клан', state.clan ? '×'+clanMult().toFixed(2) : 'нет'],
+      ['Сложность', state.difficulty]
+    ];
+    wrap.innerHTML = rows.map(r=>`<div class="flex justify-between"><span class="text-cyan-300/70">${r[0]}</span><span>${r[1]}</span></div>`).join('');
+  }
+  openModal('modal-help');
+}
+
 /* ---- Weekly quests ---- */
 function weekKey(){
   const d = new Date();
@@ -1900,3 +1917,30 @@ if (window.initBackground) initBackground('canvas-container');
 if (window.initCursor) initCursor('.action-card, .tab-btn, button, a, .node, .slot, .inv-cell, .loot-chest');
 setInterval(updateViewers, 3000);
 applyChat();
+
+/* ---------- Keyboard shortcuts (e.code = layout-independent) ----------
+   Esc — close top modal · M — music · C — theme · F1 / ? — help
+   On the actions tab: 1..6 trainings, Q..T works, A..J rests          */
+document.addEventListener('keydown', function(e){
+  if(e.ctrlKey || e.altKey || e.metaKey || e.repeat) return;
+  const tag = e.target && e.target.tagName;
+  if(tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT') return;
+  if(e.code==='Escape'){
+    const open = document.querySelectorAll('.modal-backdrop.show');
+    if(open.length) closeModal(open[open.length-1].id);
+    return;
+  }
+  if(e.code==='KeyM'){ toggleMusic(); return; }
+  if(e.code==='KeyC'){ cycleTheme(); return; }
+  if(e.code==='F1' || e.key==='?'){ e.preventDefault(); openHelp(); return; }
+  if(currentTab!=='actions' || document.querySelector('.modal-backdrop.show')) return;
+  const trainKeys = ['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6'];
+  const workKeys  = ['KeyQ','KeyW','KeyE','KeyR','KeyT'];
+  const restKeys  = ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ'];
+  let idx = trainKeys.indexOf(e.code);
+  if(idx>-1 && TRAININGS[idx]){ doAction('train', TRAININGS[idx].id); return; }
+  idx = workKeys.indexOf(e.code);
+  if(idx>-1 && WORKS[idx]){ doAction('work', WORKS[idx].id); return; }
+  idx = restKeys.indexOf(e.code);
+  if(idx>-1 && RESTS[idx]){ doAction('rest', RESTS[idx].id); return; }
+});
