@@ -746,10 +746,12 @@ function resetGame(){
 /* =========================================================
    UI HELPERS
    ========================================================= */
+let currentTab = 'actions';
 function switchTab(tab){
+  if(currentTab === tab) return; /* already active — no re-render, no flicker */
+  currentTab = tab;
   sfx('click');
-  ['actions','tree','inv','loot'].forEach(t=>{
-    const sec = document.getElementById('tab-'+t);
+  document.querySelectorAll('main > section[id^="tab-"]').forEach(sec=>{
     sec.classList.add('hidden');
     sec.classList.remove('tab-in');
   });
