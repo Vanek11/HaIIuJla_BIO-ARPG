@@ -387,7 +387,7 @@ function actionCardHTML(a, kind){
         ${badge}
       </div>
       ${req}
-      <div class="text-[11px] text-cyan-200/60 mt-1">${a.desc}</div>
+      <div class="act-desc text-[11px] text-cyan-200/60 mt-1">${a.desc}</div>
     </div>`;
   if(locked || reason) return body;
   return `<div data-call="doAction" data-args="${kind},${a.id}">${body}</div>`;
@@ -1342,7 +1342,7 @@ function updateViewers(){
 
 /* chat visibility + position (customizable) */
 let chatHidden = localStorage.getItem('bioarpg_chat_hidden')==='1';
-let chatSide = localStorage.getItem('bioarpg_chat_side') || 'left';
+let chatSide = localStorage.getItem('bioarpg_chat_side') || 'right';
 function applyChat(){
   const panel = document.getElementById('chat-panel');
   if(!panel) return;
