@@ -1996,6 +1996,12 @@ startEvents();
     if(act==='week'){ state.weekly = { key:weekKey(), train:0, earn:0, loot:0, claimed:{} }; toast('Неделя сброшена'); }
     if(act==='stats'){ state.attr.str++; state.attr.sta++; state.attr.cha++; }
     renderAll();
+    /* refresh any open modal that renders its own data */
+    const shown = id => document.getElementById(id) && document.getElementById(id).classList.contains('show');
+    if(shown('modal-cabinet')) renderCabinet();
+    if(shown('modal-weekly')) renderWeekly();
+    if(shown('modal-prestige')){ renderPrestigeInfo(); renderMetaShop(); }
+    if(shown('modal-stats')){ document.getElementById('stat-spark-exp').innerHTML = sparkline(state.history.exp, '#00f3ff'); document.getElementById('stat-spark-w').innerHTML = sparkline(state.history.weight, '#bc13fe'); }
     saveGame();
     toast('DEV: '+b.textContent.trim(),'good');
   });
