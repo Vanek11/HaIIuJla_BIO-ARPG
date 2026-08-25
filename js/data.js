@@ -101,7 +101,8 @@ const ITEM_POOL = {
     { id:'cap', img:'images/items/cap.svg', name:'Кепка стримера', slot:'helmet', rarity:'common', icon:'fa-hat-cowboy', moodReduce:0.05, w:30 },
     { id:'tshirt', img:'images/items/tshirt.svg', name:'Футболка качка', slot:'torso', rarity:'common', icon:'fa-shirt', hpReduce:0.05, w:30 },
     { id:'sneakers', img:'images/items/sneakers.svg', name:'Кеды для зала', slot:'boots', rarity:'common', icon:'fa-shoe-prints', energyReduce:0.05, w:30 },
-    { id:'piggy', img:'images/items/piggy.svg', name:'Копилка', slot:'artifact', rarity:'common', icon:'fa-piggy-bank', money:15, w:30 }
+    { id:'piggy', img:'images/items/piggy.svg', name:'Копилка', slot:'artifact', rarity:'common', icon:'fa-piggy-bank', money:15, w:30 },
+    { id:'headband', img:'images/items/headband.svg', name:'Повязка упорства', slot:'helmet', rarity:'common', icon:'fa-medal', moodReduce:0.03, w:25 }
   ],
   elite: [
     { id:'gloves-pro', img:'images/items/gloves-pro.svg', name:'Кожаные хваты Pro', slot:'gloves', rarity:'rare', icon:'fa-mitten', exp:10, w:30 },
@@ -109,7 +110,9 @@ const ITEM_POOL = {
     { id:'belt', img:'images/items/belt.svg', name:'Пояс тяжелоатлета', slot:'torso', rarity:'rare', icon:'fa-bandage', hpReduce:0.12, w:25 },
     { id:'nike', img:'images/items/nike.svg', name:'Кроссовки Nike', slot:'boots', rarity:'rare', icon:'fa-shoe-prints', energyReduce:0.12, w:25 },
     { id:'sponsor-art', img:'images/items/sponsor-art.svg', name:'Спонсорский контракт', slot:'artifact', rarity:'rare', icon:'fa-handshake', money:45, w:25 },
-    { id:'expander', img:'images/items/expander.svg', name:'Эспандеры', slot:'gloves', rarity:'rare', icon:'fa-dumbbell', exp:8, w:20 }
+    { id:'expander', img:'images/items/expander.svg', name:'Эспандеры', slot:'gloves', rarity:'rare', icon:'fa-dumbbell', exp:8, w:20 },
+    { id:'stream-shoes', img:'images/items/stream-shoes.svg', name:'Кроссовки Стримера', slot:'boots', rarity:'rare', icon:'fa-shoe-prints', energyReduce:0.15, w:20 },
+    { id:'donor-shirt', img:'images/items/donor-shirt.svg', name:'Рубаха Донатера', slot:'torso', rarity:'rare', icon:'fa-shirt', hpReduce:0.15, w:20 }
   ],
   legendary: [
     { id:'nano-gloves', img:'images/items/nano-gloves.svg', name:'Нано-хваты Титана', slot:'gloves', rarity:'epic', icon:'fa-mitten', exp:22, w:25 },
@@ -117,11 +120,15 @@ const ITEM_POOL = {
     { id:'exo-belt', img:'images/items/exo-belt.svg', name:'Экзо-пояс', slot:'torso', rarity:'epic', icon:'fa-bandage', hpReduce:0.25, w:22 },
     { id:'antigrav', img:'images/items/antigrav.svg', name:'Антиграв-ботинки', slot:'boots', rarity:'epic', icon:'fa-shoe-prints', energyReduce:0.25, w:22 },
     { id:'gold-active', img:'images/items/gold-active.svg', name:'Золотой актив', slot:'artifact', rarity:'epic', icon:'fa-gem', money:110, w:22 },
+    { id:'champ-belt', img:'images/items/champ-belt.svg', name:'Пояс чемпиона', slot:'torso', rarity:'epic', icon:'fa-medal', hpReduce:0.28, w:15 },
+    { id:'hype-gloves', img:'images/items/hype-gloves.svg', name:'Перчатки Хайпа', slot:'gloves', rarity:'epic', icon:'fa-fire', exp:26, w:15 },
     { id:'cyber-fists', img:'images/items/cyber-fists.svg', name:'Кибер-перчатки Бога', slot:'gloves', rarity:'legendary', icon:'fa-hand-fist', exp:40, w:8 },
     { id:'crown', img:'images/items/crown.svg', name:'Корона Абсолюта', slot:'helmet', rarity:'legendary', icon:'fa-crown', moodReduce:0.40, w:8 },
     { id:'armor', img:'images/items/armor.svg', name:'Броня Абсолюта', slot:'torso', rarity:'legendary', icon:'fa-shield', hpReduce:0.45, w:8 },
     { id:'speed-boots', img:'images/items/speed-boots.svg', name:'Сапоги Скорости', slot:'boots', rarity:'legendary', icon:'fa-shoe-prints', energyReduce:0.45, w:8 },
-    { id:'destiny', img:'images/items/destiny.svg', name:'Артефакт Судьбы', slot:'artifact', rarity:'legendary', icon:'fa-star', money:250, w:8 }
+    { id:'destiny', img:'images/items/destiny.svg', name:'Артефакт Судьбы', slot:'artifact', rarity:'legendary', icon:'fa-star', money:250, w:8 },
+    { id:'sub-crown', img:'images/items/sub-crown.svg', name:'Венец Подписчиков', slot:'helmet', rarity:'legendary', icon:'fa-users', moodReduce:0.45, w:6 },
+    { id:'stream-orb', img:'images/items/stream-orb.svg', name:'Сфера Стрима', slot:'artifact', rarity:'legendary', icon:'fa-atom', money:300, w:6 }
   ]
 };
 
@@ -183,6 +190,31 @@ const EVENTS = [
     choices:[
       { label:'Закрепить (+250 ₽, +30 EXP)', act:function(){ state.money+=250; state.exp+=30; return 'Вирал принёс славу!'; } },
       { label:'Не обращать внимания', act:function(){ return 'Шанс упущен, но ты спокоен.'; } }
+    ] },
+  { title:'Прорыв в рекомендации', icon:'fa-bolt', desc:'Алгоритм вынес твой клип в рекомендации. Хайп на горизонте!',
+    choices:[
+      { label:'Снять серию клипов (-15 энергии, +600 ₽, +150 EXP)', act:function(){ if(state.energy<15) return 'Слишком мало энергии — хайп упущен.'; state.energy=clamp(state.energy-15); state.money+=600; state.exp+=150; return 'Серия клипов залетела!'; } },
+      { label:'Не растекаться (+10 настроения)', act:function(){ state.mood=clamp(state.mood+10); return 'Спокойствие — тоже сила.'; } }
+    ] },
+  { title:'Щедрый фанат', icon:'fa-coins', desc:'Донатер готов закинуть крупную сумму. Но с условиями...',
+    choices:[
+      { label:'Принять донат (+800 ₽, -10 настроения)', act:function(){ state.money+=800; state.mood=clamp(state.mood-10); return 'Деньги в кармане, но совесть поморщилась.'; } },
+      { label:'Вежливо отказать (+15 настроения)', act:function(){ state.mood=clamp(state.mood+15); return 'Фанат уважил честность.'; } }
+    ] },
+  { title:'Ночная катка затянулась', icon:'fa-moon', desc:'3 часа ночи, а ты всё в игре. Ещё одну?',
+    choices:[
+      { label:'Ещё одну! (-25 энергии, -10 HP, +20 настроения)', act:function(){ state.energy=clamp(state.energy-25); state.hp=clamp(state.hp-10); state.mood=clamp(state.mood+20); return 'Катка была легендарной. Но цена...'; } },
+      { label:'Спать-спать-спать (+15 энергии)', act:function(){ state.energy=clamp(state.energy+15); return 'Здоровый сон важнее ранга.'; } }
+    ] },
+  { title:'Коуч по контенту', icon:'fa-chalkboard-user', desc:'Бывший топ-стример предлагает пару уроков за деньги.',
+    choices:[
+      { label:'Взять уроки (-300 ₽, +1 Харизма)', act:function(){ if(state.money<300) return 'Не хватает денег на уроки.'; state.money-=300; state.attr.cha+=1; return 'Харизма выросла!'; } },
+      { label:'Сам разберусь', act:function(){ return 'Гугл — тоже учитель.'; } }
+    ] },
+  { title:'Рейд хейтеров', icon:'fa-ban', desc:'Толпа хейтеров зашла флудить в чат.',
+    choices:[
+      { label:'Жёсткий бан всем (-5 настроения, +120 EXP)', act:function(){ state.mood=clamp(state.mood-5); state.exp+=120; return 'Чат чист. Опыт модерации получен.'; } },
+      { label:'Смехом разрядить (+8 настроения)', act:function(){ state.mood=clamp(state.mood+8); return 'Чат ржёт — хейтеры сливаются.'; } }
     ] }
 ];
 
@@ -234,7 +266,9 @@ const DUEL_BOTS = [
   { id:'b1', name:'ShadowLift',  power:20,  reward:300, icon:'fa-ghost',    color:'#a855f7' },
   { id:'b2', name:'IronBot',     power:45,  reward:700, icon:'fa-robot',    color:'#8aa2b8' },
   { id:'b3', name:'NeonTitan',   power:80,  reward:1500, icon:'fa-mountain', color:'#00f3ff' },
-  { id:'b4', name:'VoidReaper',  power:130, reward:3000, icon:'fa-skull',    color:'#fb7185' }
+  { id:'b4', name:'VoidReaper',  power:130, reward:3000, icon:'fa-skull',    color:'#fb7185' },
+  { id:'b5', name:'PixelWraith', power:95,  reward:2200, icon:'fa-user-ninja', color:'#3ddc84' },
+  { id:'b6', name:'GigaLifter',  power:200, reward:5000, icon:'fa-dragon',   color:'#f59e0b' }
 ];
 
 const STORY = [
