@@ -121,6 +121,7 @@
     <button class="side-btn" data-call="openClan" title="Клан"><i class="fa-solid fa-shield-halved"></i><span>Клан</span></button>
     <button class="side-btn" data-call="openStory" title="Сюжет"><i class="fa-solid fa-book-open"></i><span>Сюжет</span></button>
     <button class="side-btn" data-call="openPrestige" title="Престиж / метапрогресс"><i class="fa-solid fa-arrows-rotate"></i><span>Престиж</span></button>
+    <button class="side-btn" data-call="openWeekly" title="Задания недели"><i class="fa-solid fa-list-check"></i><span>Задания</span></button>
   </nav>
   <div class="side-foot">
     <button class="side-btn" data-call="cycleTheme" title="Сменить тему"><i class="fa-solid fa-palette"></i><span>Тема</span></button>
@@ -387,6 +388,16 @@
 
 
 <button id="chat-show-btn" class="chat-show-btn" data-call="toggleChat" title="Показать чат"><i class="fa-solid fa-comments"></i> Чат</button>
+
+<!-- ================= WEEKLY QUESTS ================= -->
+<div id="modal-weekly" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-weekly">
+  <div class="glass rounded-2xl p-6 max-w-lg w-full relative scrollbar">
+    <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-weekly"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <h2 class="font-display text-xl neon-text mb-1"><i class="fa-solid fa-list-check"></i> Задания недели</h2>
+    <p class="text-[11px] text-cyan-300/60 mb-4">Обновляются каждую неделю · прогресс идёт от тренировок, стримов и сундуков</p>
+    <div id="weekly-list"></div>
+  </div>
+</div>
 
 <!-- ================= VOLUME ================= -->
 <div id="modal-volume" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-volume">

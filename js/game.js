@@ -30,7 +30,8 @@ function makeDefaultState(){
     musicOn:false,
     tutorialDone:false,
     inventory:[],
-    equipped:{ helmet:null, torso:null, gloves:null, boots:null, artifact:null }
+    equipped:{ helmet:null, torso:null, gloves:null, boots:null, artifact:null },
+    weekly:{ key:'', train:0, earn:0, loot:0, claimed:{} }
   };
 }
 let state = makeDefaultState();
@@ -153,6 +154,7 @@ function doTrain(t, opt){
   state.exp += gain;
   state.stats.train++;
   state.daily.train++;
+  state.weekly.train++;
   state.attr.str += 1;
   state.hunger = clamp(state.hunger - 2);
   petExpGain(Math.round(gain/10));
@@ -210,6 +212,7 @@ function doWork(w){
   state.money += earn;
   state.stats.work++;
   state.daily.earn += earn;
+  state.weekly.earn += earn;
   state.attr.cha += 1;
   state.channel = Math.min(999, state.channel + Math.max(1, Math.round(earn/250)));
   maybeDonate();
@@ -670,6 +673,7 @@ function openLoot(box){
   if(state.money < price){ toast('Недостаточно ₽ для открытия!','bad'); return; }
   state.money -= price;
   state.stats.loot++;
+  state.weekly.loot++;
   state.daily.loot++;
   const resultEl = document.getElementById('loot-result');
   const animEl = document.getElementById('loot-anim');
@@ -811,6 +815,7 @@ function loadGame(){
     /* generic migration: start from defaults and deep-merge the save over
        them, so fields added in newer versions always exist */
     state = deepMerge(makeDefaultState(), data.state);
+    weeklyInit();
     return true;
   }catch(e){ return false; }
 }
@@ -1754,6 +1759,72 @@ function openVolume(){
   if(m) m.value = Math.round(parseFloat(localStorage.getItem('bioarpg_vol_music')||'0.16')*100);
   if(s) s.value = Math.round(sfxVolume*100);
   openModal('modal-volume');
+}
+
+/* ---- Weekly quests ---- */
+function weekKey(){
+  const d = new Date();
+  const start = new Date(d.getFullYear(),0,1);
+  const wk = Math.floor((d - start) / (7*864e5));
+  return d.getFullYear()+'-W'+wk;
+}
+function weeklyInit(){
+  if(!state.weekly) state.weekly = { key:'', train:0, earn:0, loot:0, claimed:{} };
+  if(state.weekly.key !== weekKey()){
+    state.weekly = { key:weekKey(), train:0, earn:0, loot:0, claimed:{} };
+  }
+}
+function weeklyCur(q){
+  return q.id==='w_train' ? state.weekly.train : (q.id==='w_earn' ? state.weekly.earn : state.weekly.loot);
+}
+function openWeekly(){
+  weeklyInit();
+  renderWeekly();
+  openModal('modal-weekly');
+}
+function renderWeekly(){
+  const wrap = document.getElementById('weekly-list');
+  if(!wrap) return;
+  wrap.innerHTML = WEEKLY_QUESTS.map(function(q){
+    const cur = Math.min(weeklyCur(q), q.target);
+    const pct = Math.round(cur/q.target*100);
+    const done = weeklyCur(q) >= q.target;
+    const claimed = !!state.weekly.claimed[q.id];
+    const reward = [
+      q.reward.money ? q.reward.money+' ₽' : '',
+      q.reward.exp ? q.reward.exp+' EXP' : ''
+    ].filter(Boolean).join(' + ');
+    let btn;
+    if(claimed) btn = '<span class="text-green-300 text-sm"><i class="fa-solid fa-check"></i> Получено</span>';
+    else if(done) btn = `<button class="glass rounded-lg px-4 py-2 text-sm neon-text hover:bg-cyan-400/10" data-call="claimWeekly" data-args="${q.id}">Забрать</button>`;
+    else btn = `<span class="text-[11px] text-cyan-300/50">${reward}</span>`;
+    return `<div class="glass rounded-xl p-3 mb-3">
+      <div class="flex items-center gap-3">
+        <div class="text-2xl text-cyan-300"><i class="fa-solid ${q.icon}"></i></div>
+        <div class="flex-1">
+          <div class="text-sm font-semibold">${q.desc}</div>
+          <div class="text-[11px] text-cyan-300/60 mt-1">${Math.floor(weeklyCur(q)).toLocaleString('ru-RU')} / ${q.target.toLocaleString('ru-RU')} · награда: ${reward}</div>
+        </div>
+        ${btn}
+      </div>
+      <div class="bar-track mt-2" style="height:8px"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--cyan),var(--purple))"></div></div>
+    </div>`;
+  }).join('');
+}
+function claimWeekly(id){
+  const q = WEEKLY_QUESTS.find(x=>x.id===id);
+  if(!q) return;
+  weeklyInit();
+  if(state.weekly.claimed[id]){ toast('Награда уже получена','bad'); return; }
+  if(weeklyCur(q) < q.target){ toast('Задание ещё не выполнено','bad'); return; }
+  state.weekly.claimed[id] = true;
+  if(q.reward.money) state.money += q.reward.money;
+  if(q.reward.exp) state.exp += q.reward.exp;
+  toast('Награда: '+(q.reward.money?q.reward.money+' ₽ ':'')+(q.reward.exp?'+'+q.reward.exp+' EXP':''),'good');
+  sfx('level');
+  renderWeekly();
+  renderAll();
+  saveGame();
 }
 function cycleMusicTrack(){
   try{

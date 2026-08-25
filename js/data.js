@@ -262,6 +262,13 @@ const ENDINGS = {
   legend:{ title:'ЛЕГЕНДА', icon:'fa-crown', text:'Уровень 100 достигнут. Ты вне категорий.' }
 };
 
+/* weekly quests: reset every ISO week, progress from weekly counters */
+const WEEKLY_QUESTS = [
+  { id:'w_train', icon:'fa-dumbbell', desc:'30 тренировок за неделю',        target:30,   reward:{ money:1500, exp:800 } },
+  { id:'w_earn',  icon:'fa-coins',    desc:'Заработать 5 000 ₽ на стримах',  target:5000, reward:{ exp:1500 } },
+  { id:'w_loot',  icon:'fa-box-open', desc:'Открыть 7 сундуков',             target:7,    reward:{ money:2000 } }
+];
+
 const DUEL_BOTS = [
   { id:'b1', name:'ShadowLift',  power:20,  reward:300, icon:'fa-ghost',    color:'#a855f7' },
   { id:'b2', name:'IronBot',     power:45,  reward:700, icon:'fa-robot',    color:'#8aa2b8' },
