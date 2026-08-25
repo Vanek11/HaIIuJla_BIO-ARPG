@@ -23,7 +23,7 @@ function makeDefaultState(){
     glyphs:[],
     difficulty:'normal',
     endings:{},
-    meta:{ level:0, points:0 },
+    meta:{ level:0, points:0, up:{} },
     clan:'',
     story:{},
     miniGame:false,
@@ -95,7 +95,7 @@ function totalStrBonus(){
 }
 function expMult(){
   const m = state.mutations;
-  return (1 + m.arms*0.05 + m.legs*0.04 + m.spirit*0.06) * classExpMult() * nicheExpMult() * metaMult() * diffExp() * ageFactor() * (1 + state.attr.str*0.01 + glyphBonus('exp')) * (state.hunger<30?0.7:1);
+  return (1 + m.arms*0.05 + m.legs*0.04 + m.spirit*0.06) * classExpMult() * nicheExpMult() * metaMult() * diffExp() * ageFactor() * (1 + state.attr.str*0.01 + glyphBonus('exp')) * (state.hunger<30?0.7:1) * (1 + metaUp('m_exp')*0.04);
 }
 function trainCostMult(){
   let m = 1 - state.mutations.back*0.08;
@@ -105,7 +105,7 @@ function trainCostMult(){
   m *= (1 - state.studio*0.05);
   return Math.max(0.1, m);
 }
-function incomeMult(){ return (1 + state.mutations.chest*0.06) * classIncomeMult() * nicheIncMult() * metaMult() * clanMult() * petIncomeMult() * diffInc() * (1 + state.attr.cha*0.01 + glyphBonus('inc')) * (1 + state.sponsor.bonus + state.studio*0.05); }
+function incomeMult(){ return (1 + state.mutations.chest*0.06) * classIncomeMult() * nicheIncMult() * metaMult() * clanMult() * petIncomeMult() * diffInc() * (1 + state.attr.cha*0.01 + glyphBonus('inc')) * (1 + state.sponsor.bonus + state.studio*0.05) * (1 + metaUp('m_income')*0.05); }
 function restEnergyMult(){ return 1 - state.mutations.skin*0.07; }
 function moodLossMult(){
   let red = state.mutations.core*0.10;
@@ -891,6 +891,8 @@ function submitProfile(){
   state.profile = { name, avatar:cabAvatar, color:cabColor, class:cabClass };
   if(cabClass==='sci'){ state.passPoints += 2; }
   if(cabClass==='monk'){ state.mood = 100; }
+  state.money += metaUp('m_capital')*1000;
+  state.passPoints += metaUp('m_pp');
   hideStartScreen();
   renderAll();
   saveGame();
@@ -1135,7 +1137,10 @@ function nicheExpMult(){ return state.niche==='fit' ? 1.10 : 1; }
 function nicheIncMult(){ return state.niche==='irl' ? 1.12 : 1; }
 function nicheStaMult(){ return state.niche==='esports' ? 0.92 : 1; }
 function nicheRecMult(){ return state.niche==='asmr' ? 1.10 : 1; }
-function metaMult(){ return 1 + (state.meta?state.meta.points:0)*0.02; }
+function metaMult(){ return 1 + (state.meta?state.meta.level:0)*0.02; }
+function metaUp(id){
+  return (state.meta && state.meta.up && state.meta.up[id]) || 0;
+}
 function clanMult(){ return state.clan ? 1.05 : 1; }
 function petIncomeMult(){ return 1 + (state.pet?state.pet.level:1)*0.03; }
 function petRecMult(){ return 1 + (state.pet?(state.pet.level-1):0)*0.03; }
@@ -1554,20 +1559,60 @@ function prestigeGain(){ return Math.floor(level()/5); }
 function openPrestige(){
   document.getElementById('prestige-info').innerHTML =
     'Текущий уровень: <b>'+level()+'</b> · Мета-очки: <b>'+(state.meta?state.meta.points:0)+'</b><br>'+
-    (level()>=20 ? 'За престиж ты получишь <b>+'+prestigeGain()+'</b> мета-очков (каждый +2% к EXP и доходу навсегда) и начнёшь заново, сохранив профиль, класс, нишу, глифы, ачивки и клан.' : 'Нужен <b>20 уровень</b>, чтобы сделать престиж.');
+    (level()>=20 ? 'За престиж ты получишь <b>+'+prestigeGain()+'</b> мета-очков (каждый мета-уровень +2% к EXP и доходу навсегда) и начнёшь заново, сохранив профиль, класс, нишу, глифы, ачивки и клан.' : 'Нужен <b>20 уровень</b>, чтобы сделать престиж.');
+  renderMetaShop();
   openModal('modal-prestige');
+}
+function renderMetaShop(){
+  const wrap = document.getElementById('meta-shop');
+  if(!wrap) return;
+  const pts = state.meta ? state.meta.points : 0;
+  wrap.innerHTML = META_UPGRADES.map(function(u){
+    const lvl = metaUp(u.id);
+    const maxed = lvl >= u.max;
+    const cost = u.cost(lvl);
+    const can = !maxed && pts >= cost;
+    return `<div class="glass rounded-xl p-3 mb-2 flex items-center gap-3 ${maxed?'opacity-70':''}">
+      <div class="text-2xl text-purple-300"><i class="fa-solid ${u.icon}"></i></div>
+      <div class="flex-1">
+        <div class="text-sm font-semibold">${u.name} <span class="text-[11px] text-cyan-300/60">ур. ${lvl}/${u.max}</span></div>
+        <div class="text-[11px] text-cyan-200/70">${u.desc}</div>
+      </div>
+      ${maxed
+        ? '<span class="text-green-300 text-sm"><i class="fa-solid fa-check"></i> Макс.</span>'
+        : `<button class="glass rounded-lg px-3 py-2 text-sm ${can?'neon-purple hover:bg-pink-400/10':'opacity-50 cursor-not-allowed'}" data-call="buyMeta" data-args="${u.id}" ${can?'':'disabled'}>${cost} очк.</button>`}
+    </div>`;
+  }).join('');
+}
+function buyMeta(id){
+  const u = META_UPGRADES.find(x=>x.id===id);
+  if(!u) return;
+  const lvl = metaUp(id);
+  if(lvl >= u.max){ toast('Уже максимум','bad'); return; }
+  const cost = u.cost(lvl);
+  if((state.meta?state.meta.points:0) < cost){ toast('Не хватает мета-очков','bad'); sfx('error'); return; }
+  state.meta.points -= cost;
+  state.meta.up = state.meta.up || {};
+  state.meta.up[id] = lvl+1;
+  toast(u.name+': уровень '+(lvl+1),'good');
+  sfx('buy');
+  renderMetaShop();
+  renderAll();
+  saveGame();
 }
 function doPrestige(){
   if(level()<20){ toast('Нужен 20 уровень','bad'); return; }
   const gain = prestigeGain();
   const keep = {
-    meta:{ level:(state.meta?state.meta.level:0)+1, points:(state.meta?state.meta.points:0)+gain },
+    meta:{ level:(state.meta?state.meta.level:0)+1, points:(state.meta?state.meta.points:0)+gain, up:(state.meta&&state.meta.up)||{} },
     profile:state.profile, niche:state.niche, achievements:state.achievements,
     glyphs:state.glyphs, difficulty:state.difficulty, tutorialDone:true,
     clan:state.clan, story:state.story
   };
+  if(metaUp('m_keep') >= 1){ keep.equipped = state.equipped; keep.inventory = state.inventory; }
   const d = makeDefaultState();
   Object.assign(state, d, keep);
+  weeklyInit();
   saveGame(); renderAll(); closeModal('modal-prestige');
   toast('Престиж! Новый мета-уровень '+(state.meta.level)+', +'+gain+' мета-очков','good'); sfx('level'); burstCenter('var(--purple)');
 }

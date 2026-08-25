@@ -269,6 +269,16 @@ const WEEKLY_QUESTS = [
   { id:'w_loot',  icon:'fa-box-open', desc:'Открыть 7 сундуков',             target:7,    reward:{ money:2000 } }
 ];
 
+/* meta-shop: bought with prestige points, persists across runs.
+   cost is a function of the current upgrade level */
+const META_UPGRADES = [
+  { id:'m_capital', icon:'fa-sack-dollar', name:'Стартовый капитал', desc:'+1 000 ₽ на старте каждого забега', max:5, cost:function(l){ return 1+l; } },
+  { id:'m_exp',     icon:'fa-dumbbell',    name:'Опыт ветерана',     desc:'+4% EXP во всех забегах',           max:5, cost:function(l){ return 2+l; } },
+  { id:'m_income',  icon:'fa-coins',       name:'Бизнес-связи',      desc:'+5% к доходу во всех забегах',      max:5, cost:function(l){ return 2+l; } },
+  { id:'m_pp',      icon:'fa-snowflake',   name:'Генные запасы',     desc:'+1 очко пассивок на старте',        max:3, cost:function(l){ return 3+l; } },
+  { id:'m_keep',    icon:'fa-box-open',    name:'Схрон',             desc:'Экипировка и сумка переживают престиж', max:1, cost:function(){ return 4; } }
+];
+
 const DUEL_BOTS = [
   { id:'b1', name:'ShadowLift',  power:20,  reward:300, icon:'fa-ghost',    color:'#a855f7' },
   { id:'b2', name:'IronBot',     power:45,  reward:700, icon:'fa-robot',    color:'#8aa2b8' },
