@@ -269,6 +269,21 @@ const WEEKLY_QUESTS = [
   { id:'w_loot',  icon:'fa-box-open', desc:'Открыть 7 сундуков',             target:7,    reward:{ money:2000 } }
 ];
 
+/* meta-shop: bought with prestige points, persists across runs.
+   cost is a function of the current upgrade level */
+const META_UPGRADES = [
+  { id:'m_capital', icon:'fa-sack-dollar', name:'Стартовый капитал', desc:'+1 000 ₽ на старте каждого забега', max:10, cost:function(l){ return 1+l; } },
+  { id:'m_exp',     icon:'fa-dumbbell',    name:'Опыт ветерана',     desc:'+4% EXP во всех забегах',           max:10, cost:function(l){ return 2+l; } },
+  { id:'m_income',  icon:'fa-coins',       name:'Бизнес-связи',      desc:'+5% к доходу во всех забегах',      max:10, cost:function(l){ return 2+l; } },
+  { id:'m_pp',      icon:'fa-snowflake',   name:'Генные запасы',     desc:'+1 очко пассивок на старте',        max:5,  cost:function(l){ return 3+l; } },
+  { id:'m_keep',    icon:'fa-box-open',    name:'Схрон',             desc:'Экипировка и сумка переживают престиж', max:1, cost:function(){ return 4; } },
+  { id:'m_streak',  icon:'fa-fire',        name:'Огонь в глазах',    desc:'Серия дней даёт +1%/день к множителю', max:3, cost:function(l){ return 3+l; } },
+  { id:'m_hunger',  icon:'fa-drumstick-bite', name:'Железный желудок', desc:'Голод падает на 10%/ур медленнее', max:3, cost:function(l){ return 2+l; } },
+  { id:'m_mood',    icon:'fa-face-smile',  name:'Стальная психика',  desc:'Потеря настроения от действий -6%/ур', max:3, cost:function(l){ return 2+l; } },
+  { id:'m_pet',     icon:'fa-paw',         name:'Дрессировка',       desc:'Питомец получает +15%/ур больше EXP', max:3, cost:function(l){ return 2+l; } },
+  { id:'m_starter', icon:'fa-gift',        name:'Сундук новичка',    desc:'Случайный редкий предмет на старте забега', max:1, cost:function(){ return 5; } }
+];
+
 const DUEL_BOTS = [
   { id:'b1', name:'ShadowLift',  power:20,  reward:300, icon:'fa-ghost',    color:'#a855f7' },
   { id:'b2', name:'IronBot',     power:45,  reward:700, icon:'fa-robot',    color:'#8aa2b8' },
