@@ -10,6 +10,10 @@ body{
   /* transparent so the shared interactive canvas shows through */
   background:transparent;
   min-height:100vh;
+  /* app layout: fixed viewport frame, no page scroll — inner areas scroll instead */
+  height:100vh; height:100dvh;
+  overflow:hidden;
+  display:flex; flex-direction:column;
 }
 /* native cursor is replaced by the themed one everywhere */
 *{ cursor:none !important; }
@@ -103,8 +107,9 @@ body{
   padding:10px 12px; font-size:13px; box-shadow:0 0 18px rgba(0,243,255,0.4);
   opacity:0; transition:opacity .12s;
 }
-.modal-backdrop{ position:fixed; inset:0; background:rgba(2,4,12,0.78); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:1000; }
+.modal-backdrop{ position:fixed; inset:0; background:rgba(2,4,12,0.78); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; }
 .modal-backdrop.show{ display:flex; }
+.modal-backdrop > div{ max-height:100%; overflow-y:auto; }
 .slot{ aspect-ratio:1/1; border:1px dashed rgba(0,243,255,0.4); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:all .2s; }
 .slot.filled{ border-style:solid; background:rgba(0,243,255,0.06); }
 .inv-cell{ aspect-ratio:1/1; border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:all .15s; font-size:11px; text-align:center; padding:4px; }
@@ -124,9 +129,9 @@ body{
 .loot-chest{ font-size:64px; transition:transform .3s; }
 .pulse{ animation:pulseGlow 2.2s ease-in-out infinite; }
 @keyframes pulseGlow{ 0%,100%{filter:drop-shadow(0 0 6px var(--cyan));} 50%{filter:drop-shadow(0 0 18px var(--purple));} }
-.scrollbar::-webkit-scrollbar{ width:8px; }
-.scrollbar::-webkit-scrollbar-track{ background:rgba(5,9,20,.6); border-radius:8px; }
-.scrollbar::-webkit-scrollbar-thumb{ background:linear-gradient(180deg,var(--cyan),var(--purple)); border-radius:8px; box-shadow:0 0 6px rgba(0,243,255,.35); }
+.scrollbar::-webkit-scrollbar{ width:10px; }
+.scrollbar::-webkit-scrollbar-track{ background:rgba(5,9,20,.6); border-radius:8px; margin:10px 2px; }
+.scrollbar::-webkit-scrollbar-thumb{ background:linear-gradient(180deg,var(--cyan),var(--purple)); background-clip:padding-box; border:2px solid transparent; border-radius:8px; box-shadow:0 0 6px rgba(0,243,255,.35); }
 .scrollbar::-webkit-scrollbar-thumb:hover{ filter:brightness(1.3); }
 /* Firefox only: standard colored scrollbar (webkit pseudo-elements don't work there).
    Must NOT apply in Chromium — scrollbar-color there disables ::-webkit-scrollbar. */
@@ -187,18 +192,65 @@ body{
   position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.35; mix-blend-mode:overlay;
   background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,243,255,0.05) 3px, rgba(0,0,0,0) 4px);
 }
-.app-shell{ display:flex; align-items:flex-start; gap:18px; max-width:1400px; margin:0 auto; padding:18px; }
-.sidebar{ width:230px; flex:0 0 230px; position:sticky; top:96px; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:10px; max-height:calc(100vh - 120px); }
-.side-brand{ font-size:18px; letter-spacing:1px; text-align:center; padding-bottom:8px; border-bottom:1px solid rgba(0,243,255,.2); }
-.side-nav{ display:flex; flex-direction:column; gap:8px; }
-.side-btn{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; color:#cfeaff; background:rgba(13,20,40,.5); border:1px solid transparent; cursor:pointer; transition:.18s; font-size:14px; }
+.app-shell{
+  flex:1 1 auto; min-height:0;               /* fill viewport under the header */
+  display:flex; align-items:stretch; gap:18px;
+  width:100%; max-width:1400px; margin:0 auto; padding:14px 18px 16px;
+}
+.sidebar{ width:230px; flex:0 0 230px; height:100%; overflow-y:auto; border-radius:18px; padding:12px; display:flex; flex-direction:column; gap:8px; }
+.side-brand{ font-size:17px; letter-spacing:1px; text-align:center; padding-bottom:6px; border-bottom:1px solid rgba(0,243,255,.2); }
+.side-nav{ display:flex; flex-direction:column; gap:6px; }
+.side-btn{ display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; color:#cfeaff; background:rgba(13,20,40,.5); border:1px solid transparent; cursor:pointer; transition:.18s; font-size:13.5px; }
 .side-btn i{ width:22px; text-align:center; font-size:17px; }
 .side-btn:hover{ border-color:var(--cyan); transform:translateX(3px); }
 .side-btn.active{ border-color:var(--cyan); background:rgba(0,243,255,.1); box-shadow:0 0 14px rgba(0,243,255,.35); color:#fff; }
 .side-foot{ margin-top:auto; padding-top:12px; border-top:1px solid rgba(0,243,255,.2); display:flex; gap:8px; }
 .side-foot .side-btn{ flex:1; flex-direction:column; gap:4px; font-size:11px; padding:10px 0; justify-content:center; }
 .side-foot .side-btn i{ font-size:16px; }
-.app-main{ flex:1 1 auto; min-width:0; }
+.app-main{ flex:1 1 auto; min-width:0; height:100%; overflow-y:auto; padding-right:10px; padding-bottom:4px; }
+body > header{ flex:0 0 auto; }
+#tree-svg{ max-width:min(860px, 100%); height:auto; }
+
+/* --- actions tab: hero card fixed like the sidebar, action columns scroll --- */
+#tab-actions{ height:100%; min-height:0; position:relative; }
+#stuck-banner{ position:absolute; top:0; left:0; right:0; z-index:10; }
+@media (min-width:1024px){
+  .actions-layout{ height:100%; min-height:0; }
+  .actions-layout > *{ min-height:0; }
+  .hero-col{ overflow:hidden; }
+  .hero-card{ height:100%; display:flex; flex-direction:column; }
+  .hero-photo{ flex:1 1 auto; min-height:120px; display:flex; align-items:center; justify-content:center; }
+  .hero-photo img{ max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; }
+  .hero-rest{ flex:0 0 auto; max-height:55%; overflow-y:auto; min-height:0; padding-right:12px; }
+  .acts-side{ height:100%; overflow:hidden; display:flex; flex-direction:column; }
+  /* single shared scrollbar for all three action columns */
+  .acts-cols{ flex:1 1 auto; min-height:0; overflow-y:auto; align-items:start; padding-right:12px; }
+  .act-col{ min-height:0; }
+}
+
+/* --- compact modes: fit laptops / small monitors without page scroll --- */
+@media (max-height:1040px){
+  .app-shell{ gap:12px; padding:10px 14px 12px; }
+  .sidebar{ padding:8px 12px 8px 8px; gap:6px; }
+  /* two-column launcher nav so all buttons fit short screens */
+  .side-nav{ display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+  .side-btn{ padding:7px 6px; font-size:11px; gap:3px; flex-direction:column; text-align:center; justify-content:center; }
+  .side-btn i{ width:auto; font-size:15px; }
+  .side-btn:hover{ transform:none; }
+  .side-brand{ font-size:14px; padding-bottom:4px; }
+  .side-foot{ padding-top:6px; }
+  .side-foot .side-btn{ padding:6px 0; }
+  #tree-svg{ max-width:min(860px, 100%, calc(100vh - 230px)); }
+  /* action cards: single-line desc to fit the tab without inner scroll */
+  .act-desc{ display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+  .action-card{ padding:9px !important; }
+}
+@media (max-height:740px){
+  .side-brand{ display:none; }
+  #tree-svg{ max-width:min(860px, 100%, calc(100vh - 190px)); }
+  .act-desc{ display:none; }
+  .action-card{ padding:8px !important; }
+}
 
 .tab-in{ animation:tabIn .35s ease; }
 @keyframes tabIn{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
@@ -225,13 +277,30 @@ body{
 .class-opt:hover{ border-color:var(--cyan); }
 .class-opt.sel{ border-color:var(--cyan); box-shadow:0 0 12px rgba(0,243,255,.45); background:rgba(0,243,255,.10); }
 
-/* chat feed */
-.chat-panel,#chat-panel{ position:fixed; left:14px; bottom:14px; width:280px; max-width:42vw; z-index:800; border-radius:14px; overflow:hidden; display:flex; flex-direction:column; max-height:240px; }
-.chat-head{ font-size:12px; padding:8px 12px; border-bottom:1px solid rgba(0,243,255,.2); color:#cfeaff; display:flex; align-items:center; gap:6px; }
+/* chat feed: docked as third column of app-shell (never overlaps sidebar) */
+.chat-panel,#chat-panel{
+  position:static; width:250px; flex:0 0 250px;
+  height:auto; max-height:100%; border-radius:14px; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+.chat-panel.chat-right,#chat-panel.chat-right{ order:3; }
+#chat-panel.chat-right{ order:3; }
+.chat-panel:not(.chat-right){ order:-1; }
+#chat-panel:not(.chat-right){ order:-1; }
+.chat-head{ font-size:12px; padding:8px 12px; border-bottom:1px solid rgba(0,243,255,.2); color:#cfeaff; display:flex; align-items:center; gap:6px; flex:0 0 auto; }
 .chat-live{ margin-left:auto; font-size:10px; color:#ff4d6d; animation:pulseGlow 1.6s infinite; }
-.chat-feed{ padding:8px 10px; overflow-y:auto; font-size:12px; line-height:1.5; }
+.chat-feed{ padding:8px 10px; overflow-y:auto; font-size:12px; line-height:1.5; flex:1 1 auto; min-height:0; }
 .chat-msg{ color:#bcd4ee; opacity:.92; margin-bottom:3px; animation:chatIn .25s ease; }
 @keyframes chatIn{ from{ opacity:0; transform:translateX(-8px); } to{ opacity:.92; transform:none; } }
+
+/* narrow screens: chat floats again instead of taking a column */
+@media (max-width:1240px){
+  .chat-panel,#chat-panel{
+    position:fixed; left:14px; bottom:14px; width:280px; max-width:42vw;
+    max-height:240px; z-index:800;
+  }
+  .chat-panel.chat-right,#chat-panel.chat-right{ left:auto; right:14px; }
+}
 
 /* idle hero */
 #arpg-hero-img{ animation:floatHero 4.2s ease-in-out infinite; }
