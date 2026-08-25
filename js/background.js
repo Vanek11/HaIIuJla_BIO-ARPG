@@ -15,6 +15,9 @@
     let width, height;
     let particles = [];
     const mouse = { x: null, y: null, radius: 150 };
+    const REF_W = 1920, REF_H = 1080;
+    const MAX_PARTICLES = Math.round((REF_W * REF_H) / 9000);
+    const CONNECT_DIST_SQ = Math.pow(Math.sqrt(REF_W * REF_H) / 10, 2);
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -64,7 +67,7 @@
 
     function initParticles() {
       particles = [];
-      const numberOfParticles = (width * height) / 9000;
+      const numberOfParticles = Math.min(MAX_PARTICLES, Math.round((width * height) / 9000));
       for (let i = 0; i < numberOfParticles; i++) particles.push(new Particle());
     }
     function connectParticles() {
@@ -73,8 +76,8 @@
         for (let b = a; b < particles.length; b++) {
           let distance = ((particles[a].x - particles[b].x) * (particles[a].x - particles[b].x))
                        + ((particles[a].y - particles[b].y) * (particles[a].y - particles[b].y));
-          if (distance < (width / 10) * (height / 10)) {
-            opacityValue = 1 - (distance / 20000);
+          if (distance < CONNECT_DIST_SQ) {
+            opacityValue = Math.max(0, 1 - (distance / 20000));
             ctx.strokeStyle = 'rgba(0, 243, 255, ' + (opacityValue * 0.2) + ')';
             ctx.lineWidth = 1;
             ctx.beginPath();
