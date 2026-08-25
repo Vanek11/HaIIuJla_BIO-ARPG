@@ -1964,7 +1964,7 @@ startEvents();
   if(!location.search.includes('dev=1')) return;
   const panel = document.createElement('div');
   panel.id = 'dev-panel';
-  panel.style.cssText = 'position:fixed;right:16px;bottom:80px;z-index:2000;width:210px;padding:12px;border-radius:14px;'+
+  panel.style.cssText = 'position:fixed;right:16px;top:80px;z-index:2000;width:210px;padding:12px;border-radius:14px;'+
     'background:rgba(8,12,28,.96);border:1px dashed #ff4d6d;font-size:12px;color:#dbeafe;display:flex;flex-direction:column;gap:6px';
   panel.innerHTML = `
     <div style="font-family:Orbitron;color:#ff4d6d;text-align:center">DEV PANEL</div>
