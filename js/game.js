@@ -996,7 +996,9 @@ function toggleSound(){
 }
 
 /* ---- Particles ---- */
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function burst(x, y, color, n){
+  if(REDUCED_MOTION) return;
   n = n||18;
   for(let i=0;i<n;i++){
     const p = document.createElement('div');

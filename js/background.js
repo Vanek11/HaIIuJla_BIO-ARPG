@@ -95,8 +95,16 @@
       requestAnimationFrame(animate);
     }
 
+    /* respect reduced motion: draw one static frame, no animation loop */
+    const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     resize();
-    animate();
+    if (reducedMotion) {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < particles.length; i++) particles[i].draw();
+      connectParticles();
+    } else {
+      animate();
+    }
   }
 
   /* ---------- Custom neon cursor ---------- */
