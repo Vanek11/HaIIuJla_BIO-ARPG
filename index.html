@@ -451,8 +451,15 @@
 <div id="modal-leaderboard" class="modal-backdrop" data-call="closeModalSelf" data-self-only data-args="modal-leaderboard">
   <div class="glass rounded-2xl p-6 max-w-lg relative scrollbar">
     <button class="absolute top-3 right-4 text-cyan-300/70 hover:text-white" data-call="closeModal" data-args="modal-leaderboard"><i class="fa-solid fa-xmark text-xl"></i></button>
-    <h2 class="font-display text-xl neon-text mb-4"><i class="fa-solid fa-ranking-star"></i> Топ стримеров (локально)</h2>
-    <div id="lb-list" class="space-y-1 max-h-[60vh] overflow-auto scrollbar"></div>
+    <h2 class="font-display text-xl neon-text mb-3"><i class="fa-solid fa-ranking-star"></i> Топ стримеров</h2>
+    <div class="flex gap-2 mb-3">
+      <input id="lb-search" class="glass rounded-lg px-3 py-2 text-sm flex-1 outline-none focus:ring-1 ring-cyan-400/40" placeholder="Поиск по нику…" maxlength="18">
+      <button class="glass rounded-lg px-3 py-2 text-sm neon-purple hover:bg-pink-400/10" data-call="lbSearch" title="Найти игрока"><i class="fa-solid fa-magnifying-glass"></i></button>
+    </div>
+    <div id="lb-found" class="mb-2"></div>
+    <div id="lb-list" class="space-y-1 max-h-[45vh] overflow-auto scrollbar"></div>
+    <div class="mt-3 pt-2 border-t border-cyan-400/10 text-[11px] text-cyan-300/50">Твои забеги на этом устройстве:</div>
+    <div id="lb-local" class="space-y-1 mt-1 max-h-[18vh] overflow-auto scrollbar"></div>
   </div>
 </div>
 

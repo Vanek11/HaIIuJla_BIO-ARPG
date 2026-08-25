@@ -1276,15 +1276,75 @@ function recordRun(){
     lb.sort((a,b)=>b.exp-a.exp);
     localStorage.setItem(LB_KEY, JSON.stringify(lb.slice(0,10)));
   }catch(e){}
+  submitScore();
 }
-function openLeaderboard(){
-  const wrap = document.getElementById('lb-list');
-  if(!wrap) return;
+/* push finished-run result to the global leaderboard (/api/lb) */
+function submitScore(){
+  try{
+    fetch('/api/lb', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ name:(state.profile.name||'стример'), exp:Math.floor(state.exp) })
+    }).catch(function(){});
+  }catch(e){}
+}
+let lbCache = [];
+function lbRow(rank, r){
+  return '<div class="cab-stat"><span>#'+rank+' '+esc(r.name)+' · '+esc(r.kg)+' · ур.'+r.lvl+'</span><span>'+r.exp+' EXP</span></div>';
+}
+function renderLocalLb(){
+  const el = document.getElementById('lb-local');
+  if(!el) return;
   let lb=[]; try{ lb = JSON.parse(localStorage.getItem(LB_KEY)||'[]'); }catch(e){}
   if(!lb.length){ seedBots(); try{ lb = JSON.parse(localStorage.getItem(LB_KEY)||'[]'); }catch(e){} }
-  if(!lb.length){ wrap.innerHTML = '<p class="text-cyan-300/60 text-sm">Пока нет записей. Умри или достигни 110 кг, чтобы попасть в топ!</p>'; }
-  else wrap.innerHTML = lb.map(function(r,i){ return '<div class="cab-stat"><span>#'+(i+1)+' '+esc(r.name)+' · '+esc(r.kg)+' · ур.'+r.lvl+'</span><span>'+r.exp+' EXP</span></div>'; }).join('');
+  el.innerHTML = lb.length ? lb.map(function(r,i){ return lbRow(i+1, r); }).join('')
+                           : '<p class="text-cyan-300/60 text-xs">Забегов пока нет.</p>';
+}
+async function fetchGlobalLb(){
+  const list = document.getElementById('lb-list');
+  if(!list) return;
+  list.innerHTML = '<p class="text-cyan-300/60 text-sm">Загрузка глобального топа…</p>';
+  try{
+    const res = await fetch('/api/lb');
+    if(!res.ok) throw new Error('http '+res.status);
+    const data = await res.json();
+    lbCache = data.top || [];
+    list.innerHTML = lbCache.length ? lbCache.map(function(r,i){ return lbRow(i+1, r); }).join('')
+                                    : '<p class="text-cyan-300/60 text-sm">Топ пуст — финишируй забег первым!</p>';
+  }catch(e){
+    lbCache = [];
+    list.innerHTML = '<p class="text-cyan-300/60 text-sm">Глобальный топ недоступен. Показаны локальные рекорды.</p>';
+    const localEl = document.getElementById('lb-local');
+    if(localEl && !localEl.innerHTML) {
+      let lb=[]; try{ lb = JSON.parse(localStorage.getItem(LB_KEY)||'[]'); }catch(e2){}
+      if(lb.length) localEl.innerHTML = lb.map(function(r,i){ return lbRow(i+1, r); }).join('');
+    }
+  }
+  renderLocalLb();
+}
+function lbSearch(){
+  const inp = document.getElementById('lb-search');
+  const box = document.getElementById('lb-found');
+  if(!inp || !box) return;
+  const q = (inp.value||'').trim();
+  if(q.length < 2){ box.innerHTML=''; return; }
+  const inTopIdx = lbCache.findIndex(function(r){ return r.name.toLowerCase() === q.toLowerCase(); });
+  if(inTopIdx >= 0){ box.innerHTML = lbRow(inTopIdx+1, lbCache[inTopIdx]); return; }
+  box.innerHTML = '<div class="cab-stat text-cyan-300/60"><span>Ищу «'+esc(q)+'»…</span><span>—</span></div>';
+  fetch('/api/lb?name='+encodeURIComponent(q))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(d && d.found) box.innerHTML = lbRow(d.found.rank || '?', d.found);
+      else if(d) box.innerHTML = '<div class="cab-stat text-cyan-300/60"><span>Никого по запросу «'+esc(q)+'»</span><span>—</span></div>';
+    })
+    .catch(function(){ box.innerHTML=''; });
+}
+function openLeaderboard(){
+  if(!document.getElementById('lb-list')) return;
+  const si = document.getElementById('lb-search'); if(si) si.value='';
+  const fb = document.getElementById('lb-found'); if(fb) fb.innerHTML='';
   openModal('modal-leaderboard');
+  fetchGlobalLb();
 }
 
 /* ---- Stats + history graph ---- */
@@ -2068,6 +2128,12 @@ if (window.initBackground) initBackground('canvas-container');
 if (window.initCursor) initCursor('.action-card, .tab-btn, button, a, .node, .slot, .inv-cell, .loot-chest');
 setInterval(updateViewers, 3000);
 applyChat();
+
+/* leaderboard search: Enter inside the search field */
+(function(){
+  const si = document.getElementById('lb-search');
+  if(si) si.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); lbSearch(); } });
+})();
 
 /* ---------- Keyboard shortcuts (e.code = layout-independent) ----------
    Esc — close top modal · M — music · C — theme · F1 / ? — help
