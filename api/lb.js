@@ -11,8 +11,8 @@ const STAGE_MIN = [0,750,1600,3000,4600,6500,9000,12000,15500,19500,24000,29000,
 const STAGE_KG  = ['61','66','70','75','79','82','86','90','94','98','102','106','110'];
 
 module.exports = async function handler(req, res){
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   if(!url || !token){ res.status(503).json({ error:'leaderboard unavailable' }); return; }
 
   async function redis(cmd){
