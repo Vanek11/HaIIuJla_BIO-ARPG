@@ -949,7 +949,17 @@ function applyTheme(i){
   document.documentElement.style.setProperty('--purple', t.purple);
   try{ localStorage.setItem('bioarpg_theme', String(themeIdx)); }catch(e){}
 }
-function cycleTheme(){ applyTheme(themeIdx+1); toast('Тема: '+THEMES[themeIdx].name,'good'); sfx('click'); }
+function cycleTheme(){
+  applyTheme(themeIdx+1);
+  /* soundtrack follows the visual theme (only if music is actually playing) */
+  if(Music.isPlaying()){
+    const name = Music.playIndex(themeIdx % MUSIC_TRACKS.length);
+    toast('Тема: '+THEMES[themeIdx].name+' · Трек: '+name,'good');
+  } else {
+    toast('Тема: '+THEMES[themeIdx].name,'good');
+  }
+  sfx('click');
+}
 
 /* ---- Sound (WebAudio) ---- */
 let soundOn = false;
